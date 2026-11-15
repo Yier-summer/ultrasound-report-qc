@@ -1,0 +1,7 @@
+# Git 只管理代码（Demo）；PRD、项目文档、视频等资料不入库，本地保留
+prd/
+docs/
+*.docx
+*.pdf
+*.mp4
+.DS_Store
