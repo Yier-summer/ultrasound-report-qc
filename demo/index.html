@@ -249,7 +249,7 @@ function mkRun(rep,ri,ver,status,o={}){
  const run={id,time:o.time||now(),trigger:o.trigger||'自动质控',lex:S.lex.ver,status,note:o.note||'',finishAt:o.finishAt||0,popup:!!o.popup,problems:[]};
  if(status==='完成')run.problems=check(ver.text,rep,S.lex).map((p,i)=>({...p,id:`${rep.id}.${ri}.${ver.v}.${id}.${i}`,ignored:false}));
  ver.runs.push(run);return run}
-function mkVer(rec,text,source,time){const v={v:'V'+(rec.versions.length+1),time:time||now(),source,text,runs:[]};rec.versions.push(v);return v}
+function mkVer(rec,text,source,time,date){const v={v:'V'+(rec.versions.length+1),time:time||now(),date:date||TODAY,source,text,runs:[]};rec.versions.push(v);return v}
 const R_=id=>S.reps.find(r=>r.id===id);
 const cur=()=>R_(S.cur);
 const latestRec=rep=>rep.records[rep.records.length-1];
@@ -280,16 +280,16 @@ function seed(){
  ['US-DEMO-008','0012345789','冯某','女',33,['妇科'],'经阴道超声','张医生','2026-11-13 15:48','控件','子宫前位，大小形态正常，内膜厚约8mm。双侧卵巢未见明显异常','子宫、双侧卵巢未见明显异常。','质控中'],
  ['US-DEMO-009','0012345795','孙某','男',48,['浅表淋巴结'],'颈部淋巴结超声','赵医生','2026-11-13 14:30','Web','左侧颈部见数个淋巴结，大小约1.0×0.5cm，皮髓质分界清。','左颈部淋巴结肿大','完成']];
  S.reps=reps.map(r=>{const rep={id:r[0],pid:r[1],name:r[2],sex:r[3],age:r[4],parts:r[5],exam:r[6],owner:r[7],time:r[8],records:[{name:'初次报告',versions:[]}],misses:[]};
-  const rec=rep.records[0];const ver=mkVer(rec,{findings:r[10],diagnosis:r[11]},r[9],r[8].slice(11));const st=r[12];
+  const rec=rep.records[0];const ver=mkVer(rec,{findings:r[10],diagnosis:r[11]},r[9],r[8].slice(11),r[8].slice(0,10));const st=r[12];
   if(st==='完成')mkRun(rep,0,ver,'完成',{trigger:'自动质控'});
   else if(st==='变化'){mkRun(rep,0,ver,'完成',{trigger:'自动质控'});rep.changed=true}
   else if(st==='失败')mkRun(rep,0,ver,'失败',{note:'质控服务超过 30 秒未返回，已按失败处理',trigger:'自动质控'});
   else if(st==='质控中')mkRun(rep,0,ver,'质控中',{finishAt:Date.now()+4000,trigger:'自动质控'});
   return rep});
  const r5={id:'US-DEMO-005',pid:'0012345745',name:'钱某',sex:'男',age:63,parts:['泌尿'],exam:'泌尿系超声',owner:'李医生',time:'2026-11-13 17:05',records:[{name:'初次报告',versions:[]},{name:'修订报告',versions:[]}],misses:[]};
- let rc=r5.records[0];let v1=mkVer(rc,{findings:'双肾大小形态正常，右肾见无回声，大小约1.2×1.0cm，边界清楚。',diagnosis:'右肾囊肿。'},'控件','15:10');mkRun(r5,0,v1,'完成',{time:'15:10'});
- let v2=mkVer(rc,{findings:'双肾大小形态正常，右肾见无回声，大小约1.2×1.0cm，边界清楚。前列腺大小形态正常。',diagnosis:'右肾囊肿。'},'回填','15:40');mkRun(r5,0,v2,'完成',{time:'15:40',trigger:'回填后复检'});mkRun(r5,0,v2,'完成',{time:'15:52',trigger:'手动复检'});
- rc=r5.records[1];let w1=mkVer(rc,{findings:'右肾见无回声，大小约1.2×1.0，边界清楚。前列腺大小形态正常。',diagnosis:'左肾囊肿'},'控件','16:30');mkRun(r5,1,w1,'完成',{time:'16:30'});
+ let rc=r5.records[0];let v1=mkVer(rc,{findings:'双肾大小形态正常，右肾见无回声，大小约1.2×1.0cm，边界清楚。',diagnosis:'右肾囊肿。'},'控件','15:10','2026-11-13');mkRun(r5,0,v1,'完成',{time:'15:10'});
+ let v2=mkVer(rc,{findings:'双肾大小形态正常，右肾见无回声，大小约1.2×1.0cm，边界清楚。前列腺大小形态正常。',diagnosis:'右肾囊肿。'},'回填','15:40','2026-11-13');mkRun(r5,0,v2,'完成',{time:'15:40',trigger:'回填后复检'});mkRun(r5,0,v2,'完成',{time:'15:52',trigger:'手动复检'});
+ rc=r5.records[1];let w1=mkVer(rc,{findings:'右肾见无回声，大小约1.2×1.0，边界清楚。前列腺大小形态正常。',diagnosis:'左肾囊肿'},'控件','16:30','2026-11-13');mkRun(r5,1,w1,'完成',{time:'16:30'});
  S.reps.splice(4,0,r5);S.reps.sort((a,b)=>a.id<b.id?-1:1);
  S.tickets=[];
  const tk=(id,items,time,handler)=>{const rep=R_(id);const ri=rep.records.length-1;const ver=latestVer(rep.records[ri]);const run=latestRun(ver);
@@ -477,8 +477,8 @@ function renderDetail(){
  const ids=S.from==='ap'?myTickets().map(t=>t.rep):filteredRows().map(r=>r.id);const ix=ids.indexOf(rep.id);
  const nav=`<div class="row" style="margin-bottom:14px"><button class="btn sm" data-act="back">← 返回${S.from==='ap'?'申诉列表':'报告列表'}</button><span style="margin-left:auto" class="muted small">${ix>=0?`第 ${ix+1} / ${ids.length} 份`:''}</span><button class="btn sm" ${ix>0?'':'disabled'} data-act="nav" data-v="-1">‹ 上一条</button><button class="btn sm" ${ix>=0&&ix<ids.length-1?'':'disabled'} data-act="nav" data-v="1">下一条 ›</button></div>`;
  const multiV=rep.records.length>1||rec.versions.length>1;
- const vtabs=`${rep.records.length>1?`<span class="small muted">报告记录</span><div class="vtabs">${rep.records.map((r,i)=>`<button class="vt ${i===ri?'on':''}" data-act="setri" data-v="${i}">${r.name}（${recNo(rep,i)}）</button>`).join('')}</div><span class="muted">|</span>`:''}<span class="small muted">报告版本</span><div class="vtabs">${rec.versions.map(v=>`<button class="vt ${v===ver?'on':''}" data-act="setvi" data-v="${v.v}">${v.v}${v===latestVer(rec)?' · 最新':''}</button>`).join('')}</div>`;
- const vbar=`<div class="vline row">${multiV?vtabs:`<span class="small muted">报告版本 ${ver.v}</span>`}<span class="small muted">${ver.time} · 来源 ${ver.source}</span><span style="margin-left:auto"></span>${ver.source==='OCR'?`<button class="link small" data-act="origImg">查看原图</button>`:''}${rec.versions.length>1?`<button class="link small" data-act="cmp">版本对比</button>`:''}</div>`;
+ const vtabs=`${rep.records.length>1?`<span class="small muted">报告记录</span><div class="vtabs">${rep.records.map((r,i)=>`<button class="vt ${i===ri?'on':''}" data-act="setri" data-v="${i}">${r.name}（${recNo(rep,i)}）</button>`).join('')}</div><span class="muted">|</span>`:''}<span class="small muted">正文版本</span><div class="vtabs">${rec.versions.map(v=>`<button class="vt ${v===ver?'on':''}" data-act="setvi" data-v="${v.v}">${v.v}${v===latestVer(rec)?' · 最新':''}</button>`).join('')}</div>`;
+ const vbar=`<div class="vline row">${multiV?vtabs:`<span class="small muted">正文版本 ${ver.v}</span>`}<span class="small muted">${ver.date} ${ver.time} · 来源 ${ver.source}</span><span style="margin-left:auto"></span>${ver.source==='OCR'?`<button class="link small" data-act="origImg">查看原图</button>`:''}${rec.versions.length>1?`<button class="link small" data-act="cmp">版本对比</button>`:''}</div>`;
  const hdr=`<div class="card"><div class="row" style="margin-bottom:12px"><h2>${esc(rep.name)}</h2><span class="muted">${rep.sex} · ${rep.age||'年龄未填'}岁 · 检查标识 ${rep.id}</span><span class="chip c-info nd" style="margin-left:auto">${rep.parts.join('、')}</span></div>
  <div class="kv"><div>病历号<b>${rep.pid}</b></div><div>检查项目<b>${esc(rep.exam)}</b></div><div>报告医生<b>${rep.owner}</b></div><div>报告时间<b class="num">${rep.time}</b></div></div>${vbar}</div>`;
  const bn=`<div class="banner ${B[0]}"><b>${B[1]}</b>${B[2]}</div>`;
@@ -643,14 +643,14 @@ function renderStats(){
  const fmtN=(v)=>String(Math.round(v)).replace(/\B(?=(\d{3})+$)/g,',');
  const flt=`<div class="row" style="margin-bottom:14px"><div class="seg">${[['7','近 7 天'],['30','近 30 天'],['custom','自定义']].map(o=>`<button class="${g.range===o[0]?'on':''}" data-act="strange" data-v="${o[0]}">${o[1]}</button>`).join('')}</div>
   ${g.range==='custom'?`<input type="date" class="inp" data-chg="sfrom" value="${g.from}" min="2026-10-16" max="2026-11-14"> — <input type="date" class="inp" data-chg="sto" value="${g.to}" min="2026-10-16" max="2026-11-14">`:''}
-  ${own?'<span class="chip c-info nd">仅我的报告</span>':''}<span class="muted small" style="margin-left:auto">${hasPrev?'对比上期 = 前一段等长时间':'所选范围超出 30 天，不做对比'}</span></div>`;
+  ${own?'<span class="chip c-info nd">仅我的报告</span>':''}</div>`;
  const ex=(k,label)=>`<button class="link" data-act="sexp" data-v="${k}">${g.exp[k]?'收起':'展开全部'}</button>`;
  /* 1 质控数量 */
  const E1=A.pos,N1=A.C-A.pos,dRate=A.C?E1/A.C:null,pRate=B&&B.C?B.pos/B.C:null;
  const rdl=pRate==null||dRate==null?'':`<span class="muted small">${dRate>=pRate?'↑':'↓'} ${(Math.abs(dRate-pRate)*100).toFixed(1)} 个百分点 vs 上期</span>`;
  const qc=`<div class="card"><h3 style="margin:0">质控数量</h3><div style="margin-bottom:14px"></div>
-  <div class="qtop"><div><span class="bigno">${fmtN(A.C)}</span><div style="margin-top:8px">${hasPrev?dlt(A.C,B.C,fmtN):''}</div></div>
-   <div class="row" style="gap:16px;flex-wrap:nowrap">${donut(E1,N1,C_ERR,C_NONE,fmtN(A.C),'份报告')}<div class="dleg"><div><i style="background:${C_ERR}"></i>发现错误 <b>${E1}</b></div><div><i style="background:${C_NONE}"></i>未发现错误 <b>${N1}</b></div><div class="rate">错误检出率 <b>${pct1(dRate)}</b> ${rdl}</div></div></div>
+  <div class="qtop"><div><span class="bigno">${fmtN(A.C)}</span></div>
+   <div class="row" style="gap:16px;flex-wrap:nowrap">${donut(E1,N1,C_ERR,C_NONE,fmtN(A.C),'份报告')}<div class="dleg"><div><i style="background:${C_ERR}"></i>发现错误 <b>${E1}</b></div><div><i style="background:${C_NONE}"></i>未发现错误 <b>${N1}</b></div><div class="rate">错误检出率 <b>${pct1(dRate)}</b></div></div></div>
 </div>
   <div class="lgd" style="margin:16px 0 2px"><span><i style="background:var(--brand)"></i>质控数量</span><span><i style="background:${C_ERR}"></i>其中发现错误</span><span class="muted small" style="margin-left:auto">每日趋势（${dstr(f)} ~ ${dstr(t)}）</span></div>${lineChart(A.daily)}<div class="muted small" style="margin-top:6px;text-align:right">质控成功率 ${pct1(A.rate)} · 失败 ${A.F} 次${A.F?` <button class="link" data-act="stfail">查看</button>`:''}</div></div>`;
  /* 2 错误排名 */
