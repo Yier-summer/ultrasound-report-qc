@@ -74,8 +74,9 @@ textarea{width:100%;min-height:96px;resize:vertical;line-height:1.7}
 .tbl th{background:var(--panel2);color:var(--muted);font-weight:600;text-align:left;padding:10px 14px;white-space:nowrap;position:sticky;top:0;border-bottom:1px solid var(--line);font-size:12.5px}
 .tbl td{padding:10px 14px;border-bottom:1px solid var(--line);white-space:nowrap;vertical-align:middle}
 .tbl tr:last-child td{border-bottom:0}
-.hfb{background:none;border:0;padding:3px;margin-left:3px;border-radius:5px;cursor:pointer;color:var(--muted);opacity:.6;line-height:0;vertical-align:-1px}
-.hfb:hover,.hfb.open{opacity:1;background:var(--gray-soft)}.hfb.on{color:var(--brand);opacity:1}
+.hfb{display:inline-flex;align-items:center;gap:6px;margin:-4px 0 -4px -9px;padding:3px 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--fg);font-weight:600;font-size:12.5px;cursor:pointer;white-space:nowrap;transition:.12s}
+.hfb svg{color:var(--muted)}.hfb:hover,.hfb.open{border-color:var(--brand)}
+.hfb.on{border-color:var(--brand);background:var(--brand-soft);color:var(--brand)}.hfb.on svg{color:var(--brand)}
 .hfp{position:fixed;left:-999px;top:0;z-index:60;width:228px;max-width:calc(100vw - 16px);background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--sh2);padding:8px;font-size:13px;color:var(--fg)}
 .hfp>.inp{width:100%;margin-bottom:6px;padding:5px 10px}
 .hfl{max-height:228px;overflow:auto;display:flex;flex-direction:column;gap:1px}.hfe{padding:6px 8px}
@@ -350,17 +351,18 @@ function renderList(){
  if(S.role==='报告医生')S.sub='qc';
  return (S.sub==='ap'?renderAppeal():renderQC())}
 const HF={sex:'性别',part:'检查部位',doc:'报告医生',time:'报告时间',st:'质控状态',tk:'申诉'};
-const HF_ICON='<svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M1.5 2.5h13l-5 6v5l-3 1.5v-6.5z"/></svg>';
+const HF_ICON='<svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3.5l3 3 3-3"/></svg>';
 const tkOf=r=>{const t=ticketsFor(r);return !t?'无申诉':pendN(t)?'申诉中':'已处理'};
 const dayN=d=>Date.parse(d+'T00:00:00');
 const hfKeys=()=>Object.keys(HF).filter(k=>k!=='doc'||S.role!=='报告医生');
 function hfOn(k){const f=S.filt;return k==='sex'?f.sex!=='全部':k==='time'?!!f.time.k:k==='part'?f.parts.length>0:k==='doc'?f.docs.length>0:f[k].length>0}
 function inTime(t){const T=S.filt.time,d=t.slice(0,10);if(T.k==='custom')return(!T.from||d>=T.from)&&(!T.to||d<=T.to);
  const n={today:1,'7':7,'30':30}[T.k];return d<=TODAY&&(dayN(TODAY)-dayN(d))/864e5<n}
-function filteredRows(){const f=S.filt;const q=f.q.trim().toLowerCase();const num=/^\d+$/.test(q)?+q:null;const ks=hfKeys();
+function filteredRows(){const f=S.filt;const q=f.q.trim().toLowerCase();const ks=hfKeys();
  return visibleReps().filter(r=>{
-  if(q){const run=latestRun(latestVer(latestRec(r)));const pc=run.status==='完成'?active(run).length:null;
-   if(!([r.id,r.name].some(x=>x.toLowerCase().includes(q))||(num!==null&&((r.age&&r.age===num)||pc===num))))return false}
+  if(q){const run=latestRun(latestVer(latestRec(r))),t=ticketsFor(r),pn=pendN(t);
+   const hay=[r.id,r.name,r.sex,r.age||'',r.parts.join('、'),r.owner,r.time.slice(5),statusOf(r),run.status==='完成'?active(run).length:'',t?(pn?(isRev()?'待处理 ':'申诉中 ')+pn:'已处理'):'无申诉'].join('\n').toLowerCase();
+   if(!hay.includes(q))return false}
   if(f.sex!=='全部'&&r.sex!==f.sex)return false;
   if(f.parts.length&&!r.parts.some(p=>f.parts.includes(p)))return false;
   if(ks.includes('doc')&&f.docs.length&&!f.docs.includes(r.owner))return false;
@@ -368,7 +370,7 @@ function filteredRows(){const f=S.filt;const q=f.q.trim().toLowerCase();const nu
   if(f.st.length&&!f.st.includes(statusOf(r)))return false;
   if(f.tk.length&&!f.tk.includes(tkOf(r)))return false;
   return true})}
-const hfTh=k=>`<th>${HF[k]}<button class="hfb${hfOn(k)?' on':''}${S.hf===k?' open':''}" data-act="hf" data-v="${k}" aria-label="筛选${HF[k]}" title="筛选${HF[k]}">${HF_ICON}</button></th>`;
+const hfTh=k=>`<th><button class="hfb${hfOn(k)?' on':''}${S.hf===k?' open':''}" data-act="hf" data-v="${k}" aria-haspopup="dialog" aria-expanded="${S.hf===k}" title="按${HF[k]}筛选">${HF[k]}${HF_ICON}</button></th>`;
 function hfPop(){const k=S.hf,f=S.filt;if(!k||!hfKeys().includes(k))return'';
  const opt=(act,v,on,radio)=>`<button class="hfo${on?' on':''}" data-act="${act}" data-v="${k}" data-n="${esc(v)}"><i class="ck${radio?' r':''}"></i>${esc(v)}</button>`;
  let body='';
@@ -390,9 +392,8 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&S.hf){S.hf=null;ren
 function renderQC(){
  const f=S.filt;let rows=filteredRows();
  const guide=S.guide?`<div class="banner b-info" style="align-items:flex-start"><div><b>试用指引</b><ol class="steps" style="margin-top:2px"><li>右上角切换角色：报告医生 / 审核医生 / 管理员，看到的内容不同。</li><li>右下角悬浮窗模拟医生在工作站里的操作：点“手动质控”，结果会自动弹出。</li><li>双击任意一行进入质控详情；点正文高亮或右侧问题卡，两边联动定位。</li><li>在详情里对问题“申诉”，切到审核医生处理，回到列表看申诉列实时变化。</li><li>管理员在“设置”里配置质控词库、部位对应、采集配置。</li></ol></div><button class="x" style="position:static;margin-left:auto" data-act="guideX">×</button></div>`:'';
- return guide+`<div class="card"><div class="row" style="margin-bottom:14px"><input class="inp" style="width:260px" placeholder="检查标识 / 姓名 / 年龄 / 问题数" value="${esc(f.q)}" data-chg="fq">
- ${(()=>{const n=hfKeys().filter(hfOn).length+(f.q.trim()?1:0);return n?`<span class="small">已筛选 ${n} 项 · <button class="link" style="padding:2px 0" data-act="hfclrall">清除全部</button></span>`:''})()}
- <span class="muted small" style="margin-left:auto">共 ${rows.length} 份报告 · 每份报告一行</span></div>
+ return guide+`<div class="card"><div class="row" style="margin-bottom:14px"><input class="inp" style="width:260px" placeholder="搜索检查标识、姓名、部位、医生等" value="${esc(f.q)}" data-chg="fq">
+ ${(()=>{const n=hfKeys().filter(hfOn).length+(f.q.trim()?1:0);return n?`<span class="small">已筛选 ${n} 项 · <button class="link" style="padding:2px 0" data-act="hfclrall">清除全部</button></span>`:''})()}</div>
  <div class="tw"><table class="tbl"><thead><tr><th>检查标识</th><th>姓名</th>${hfTh('sex')}<th>年龄</th>${hfTh('part')}${S.role==='报告医生'?'<th>报告医生</th>':hfTh('doc')}${hfTh('time')}${hfTh('st')}<th>问题数</th>${hfTh('tk')}<th>操作</th></tr></thead><tbody>
  ${rows.map(r=>{const run=latestRun(latestVer(latestRec(r))),st=statusOf(r),t=ticketsFor(r),pn=pendN(t),n=active(run).length;
  return `<tr class="rw" data-dbl="${r.id}"><td><b>${r.id}</b></td><td>${esc(S.role==='报告医生'||S.role==='审核医生'||S.role==='管理员'?r.name:'')}</td><td>${r.sex}</td><td class="n">${r.age||'—'}</td><td>${r.parts.join('、')}</td><td>${r.owner}</td><td class="n">${r.time.slice(5)}</td>
