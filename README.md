@@ -4,3 +4,4 @@
 
 - `demo/index.html`：可点击原型，浏览器直接打开（数据均为示例）
 - `CLAUDE.md`：给 Claude Code 的工作说明
+- `CHANGELOG.md`：修改记录（改了什么、为什么改）
