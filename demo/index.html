@@ -391,7 +391,7 @@ function renderQC(){
  const f=S.filt;let rows=filteredRows();
  const guide=S.guide?`<div class="banner b-info" style="align-items:flex-start"><div><b>试用指引</b><ol class="steps" style="margin-top:2px"><li>右上角切换角色：报告医生 / 审核医生 / 管理员，看到的内容不同。</li><li>右下角悬浮窗模拟医生在工作站里的操作：点“手动质控”，结果会自动弹出。</li><li>双击任意一行进入质控详情；点正文高亮或右侧问题卡，两边联动定位。</li><li>在详情里对问题“申诉”，切到审核医生处理，回到列表看申诉列实时变化。</li><li>管理员在“设置”里配置质控词库、部位对应、采集配置。</li></ol></div><button class="x" style="position:static;margin-left:auto" data-act="guideX">×</button></div>`:'';
  return guide+`<div class="card"><div class="row" style="margin-bottom:14px"><input class="inp" style="width:260px" placeholder="检查标识 / 姓名 / 年龄 / 问题数" value="${esc(f.q)}" data-chg="fq">
- ${(()=>{const n=hfKeys().filter(hfOn).length;return n?`<span class="small">已筛选 ${n} 项 · <button class="link" style="padding:2px 0" data-act="hfclrall">清除全部</button></span>`:''})()}
+ ${(()=>{const n=hfKeys().filter(hfOn).length+(f.q.trim()?1:0);return n?`<span class="small">已筛选 ${n} 项 · <button class="link" style="padding:2px 0" data-act="hfclrall">清除全部</button></span>`:''})()}
  <span class="muted small" style="margin-left:auto">共 ${rows.length} 份报告 · 每份报告一行</span></div>
  <div class="tw"><table class="tbl"><thead><tr><th>检查标识</th><th>姓名</th>${hfTh('sex')}<th>年龄</th>${hfTh('part')}${S.role==='报告医生'?'<th>报告医生</th>':hfTh('doc')}${hfTh('time')}${hfTh('st')}<th>问题数</th>${hfTh('tk')}<th>操作</th></tr></thead><tbody>
  ${rows.map(r=>{const run=latestRun(latestVer(latestRec(r))),st=statusOf(r),t=ticketsFor(r),pn=pendN(t),n=active(run).length;
@@ -786,7 +786,7 @@ document.addEventListener('click',e=>{
  case'hfpick':{const arr=v==='part'?S.filt.parts:v==='doc'?S.filt.docs:S.filt[v];const j=arr.indexOf(n);if(j<0)arr.push(n);else arr.splice(j,1);break}
  case'hftime':{const T=S.filt.time;if(T.k===v)T.k='';else{T.k=v;if(v==='custom'&&!T.from){T.from='2026-11-01';T.to=TODAY}}break}
  case'hfclr':{const f=S.filt;if(v==='sex')f.sex='全部';else if(v==='time')f.time={k:'',from:'',to:''};else if(v==='part')f.parts=[];else if(v==='doc')f.docs=[];else f[v]=[];break}
- case'hfclrall':{const f=S.filt;Object.assign(f,{sex:'全部',parts:[],docs:[],time:{k:'',from:'',to:''},st:[],tk:[]});S.hf=null;break}
+ case'hfclrall':{const f=S.filt;Object.assign(f,{q:'',sex:'全部',parts:[],docs:[],time:{k:'',from:'',to:''},st:[],tk:[]});S.hf=null;break}
  case'tab':S.tab=v;S.layer=null;S.hdl=null;S.demoOpen=false;break;
  case'role':S.role=v;S.tab='list';S.sub='qc';S.layer=null;S.hdl=null;S.aset=null;S.editing=false;S.demoOpen=false;break;
  case'go':{const [t,x]=v.split(':');S.tab=t;S.layer=null;S.hdl=null;S.demoOpen=false;if(t==='list')S.sub=x||'qc';if(t==='settings')S.aset=x;break}
