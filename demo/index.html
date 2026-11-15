@@ -199,6 +199,51 @@ kbd{background:var(--gray-soft);border:1px solid var(--line);border-bottom-width
 .fcon{margin:14px 0 14px 114px;font-size:12.5px;color:var(--muted);border-left:2px solid var(--line);padding-left:10px}
 @media(max-width:700px){.frow{grid-template-columns:1fr}.fcon{margin-left:0}}
 @media(max-width:900px){.ng{display:contents}.nh{display:none}}
+/* ---------- 平板 / 手机 ---------- */
+@media(max-width:900px){
+ #app{grid-template-rows:auto 1fr}
+ /* 侧栏：一行横向滑动 */
+ .side{flex-wrap:nowrap;overflow-x:auto;gap:2px;padding:8px 12px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+ .side::-webkit-scrollbar{display:none}
+ .side .logo{position:sticky;left:-12px;z-index:2;background:var(--ink);padding:0 8px 0 0;margin-left:-12px;padding-left:12px;flex:none}
+ .side .logo b{font-size:14px;white-space:nowrap}
+ .side .nv,.side .demo{flex:none;white-space:nowrap;padding:7px 10px}
+ .side .demo .pop{position:fixed;left:12px;right:12px;top:56px;bottom:auto;width:auto}
+}
+@media(max-width:820px){
+ body{font-size:13.5px}
+ .top{padding:10px 12px;gap:8px}.top h1{font-size:17px}
+ .top .seg button{padding:5px 9px;font-size:12.5px}
+ main{padding:12px 12px 96px}
+ .card{padding:14px;border-radius:14px}
+ /* 列表：表头变成一排筛选按钮，每行变成卡片 */
+ .tbl.mc,.tbl.mc thead,.tbl.mc tbody{display:block}
+ .tw:has(.tbl.mc){overflow:visible}
+ .tbl.mc thead tr{display:flex;flex-wrap:wrap;gap:6px;padding:10px;background:var(--panel2);border-bottom:1px solid var(--line)}
+ .tbl.mc thead th{display:none}
+ .tbl.mc thead th:has(.hfb){display:block;padding:0;border:0;background:none;position:static}
+ .tbl.mc thead .hfb{margin:0}
+ .tbl.mc tbody tr.rw{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px 12px;padding:12px 14px;border-bottom:1px solid var(--line)}
+ .tbl.mc tbody tr.rw:last-child{border-bottom:0}
+ .tbl.mc tbody tr.rw:hover td{background:none}
+ .tbl.mc tbody td{padding:0;border:0;white-space:normal;display:flex;gap:6px;align-items:center;min-width:0;font-size:13px}
+ .tbl.mc tbody td[data-l]::before{content:attr(data-l);color:var(--muted);font-size:12px;flex:none}
+ .tbl.mc td.m1 b{font-size:14.5px}.tbl.mc td.m2{font-weight:600;justify-content:flex-end}
+ .tbl.mc td.ma{grid-column:1/-1;justify-content:flex-end;border-top:1px dashed var(--line);padding-top:6px;margin-top:2px}
+ .tbl.mc tbody tr:not(.rw) td{display:block}
+ .row>.inp[data-chg=fq]{width:100%!important}
+ .hfsum{margin-left:0}
+ /* 统计 */
+ .rk{grid-template-columns:20px minmax(0,1.3fr) minmax(36px,1fr) 34px 44px;gap:8px;font-size:13px}
+ .rk em{font-size:12px}
+ .bigno{font-size:44px}
+ /* 弹窗 */
+ .dlg{width:calc(100vw - 24px)!important;max-width:none!important;padding:18px 16px!important;max-height:calc(100vh - 24px);overflow:auto}
+ /* 悬浮窗 */
+ #widget{right:12px!important;bottom:12px!important;left:auto}
+ .pillw .pill{width:calc(100vw - 72px);max-width:300px}
+ .wl{width:calc(100vw - 24px)}
+}
 </style>
 <div id="app"><aside class="side" id="side"></aside><div class="mainc"><header class="top" id="top"></header><main id="view"></main></div></div>
 <div id="widget"></div><div id="layer"></div><div id="toast" class="toast" hidden></div>
@@ -436,20 +481,20 @@ function renderQC(){
  const f=S.filt;let rows=filteredRows();
  const guide=S.guide?`<div class="banner b-info" style="align-items:flex-start"><div><b>试用指引</b><ol class="steps" style="margin-top:2px"><li>右上角切换角色：报告医生 / 审核医生 / 管理员，看到的内容不同。</li><li>右下角悬浮窗模拟医生在工作站里的操作：点“手动质控”，结果会自动弹出。</li><li>双击任意一行进入质控详情；点正文高亮或右侧问题卡，两边联动定位。</li><li>在详情里对问题“申诉”，切到审核医生处理，回到列表看申诉列实时变化。</li><li>管理员在“设置”里配置质控词库、部位对应、采集配置。</li></ol></div><button class="x" style="position:static;margin-left:auto" data-act="guideX">×</button></div>`:'';
  return guide+`<div class="card">${hfBar('搜索检查标识、姓名、部位、医生等')}
- <div class="tw"><table class="tbl"><thead><tr><th>检查标识</th><th>姓名</th>${hfTh('sex')}<th>年龄</th>${hfTh('part')}${S.role==='报告医生'?'<th>报告医生</th>':hfTh('doc')}${hfTh('time')}${hfTh('st')}<th>问题数</th>${hfTh('tk')}<th>操作</th></tr></thead><tbody>
+ <div class="tw"><table class="tbl mc"><thead><tr><th>检查标识</th><th>姓名</th>${hfTh('sex')}<th>年龄</th>${hfTh('part')}${S.role==='报告医生'?'<th>报告医生</th>':hfTh('doc')}${hfTh('time')}${hfTh('st')}<th>问题数</th>${hfTh('tk')}<th>操作</th></tr></thead><tbody>
  ${rows.map(r=>{const run=latestRun(latestVer(latestRec(r))),st=statusOf(r),t=ticketsFor(r),pn=pendN(t),n=active(run).length;
- return `<tr class="rw" data-dbl="${r.id}"><td><b>${r.id}</b></td><td>${esc(S.role==='报告医生'||S.role==='审核医生'||S.role==='管理员'?r.name:'')}</td><td>${r.sex}</td><td class="n">${r.age||'—'}</td><td>${r.parts.join('、')}</td><td>${r.owner}</td><td class="n">${r.time.slice(5)}</td>
- <td><span class="chip ${stChip(st)}">${st}</span></td><td class="n">${run.status==='完成'?(n?`<b class="bad">${n}</b>`:'0'):'—'}</td>
- <td>${t?(pn?`<span class="chip c-pur">${isRev()?'待处理 ':'申诉中 '}${pn}</span>`:'<span class="chip c-gray nd">已处理</span>'):'—'}</td>
- <td><button class="link" data-act="open" data-id="${r.id}">查看</button>${r.owner===myName()&&S.role!=='管理员'?`<button class="link" data-act="recheckRow" data-id="${r.id}">复检</button>`:''}</td></tr>`}).join('')||`<tr><td colspan="11" class="muted" style="padding:34px;text-align:center">没有符合条件的报告</td></tr>`}</tbody></table></div>
+ return `<tr class="rw" data-dbl="${r.id}"><td class="m1"><b>${r.id}</b></td><td class="m2">${esc(S.role==='报告医生'||S.role==='审核医生'||S.role==='管理员'?r.name:'')}</td><td data-l="性别">${r.sex}</td><td class="n" data-l="年龄">${r.age||'—'}</td><td data-l="部位">${r.parts.join('、')}</td><td data-l="医生">${r.owner}</td><td class="n" data-l="时间">${r.time.slice(5)}</td>
+ <td data-l="状态"><span class="chip ${stChip(st)}">${st}</span></td><td class="n" data-l="问题数">${run.status==='完成'?(n?`<b class="bad">${n}</b>`:'0'):'—'}</td>
+ <td data-l="申诉">${t?(pn?`<span class="chip c-pur">${isRev()?'待处理 ':'申诉中 '}${pn}</span>`:'<span class="chip c-gray nd">已处理</span>'):'—'}</td>
+ <td class="ma"><button class="link" data-act="open" data-id="${r.id}">查看</button>${r.owner===myName()&&S.role!=='管理员'?`<button class="link" data-act="recheckRow" data-id="${r.id}">复检</button>`:''}</td></tr>`}).join('')||`<tr><td colspan="11" class="muted" style="padding:34px;text-align:center">没有符合条件的报告</td></tr>`}</tbody></table></div>
  </div>${hfPop()}`}
 /* ---------- 申诉列表 / 处理 ---------- */
 function renderAppeal(){
  const ts=filteredTickets();
  return `<div class="card">${hfBar('搜索检查标识、姓名、医生等')}
- <div class="tw"><table class="tbl"><thead><tr><th>检查标识</th><th>姓名</th>${hfTh('adoc')}${hfTh('atime')}<th>条目</th><th>待处理</th>${hfTh('ast')}${hfTh('ahdl')}<th>操作</th></tr></thead><tbody>
- ${ts.map(t=>{const rep=R_(t.rep),pn=pendN(t),mine=rep.owner==='赵医生'&&S.role==='审核医生';return `<tr class="rw" data-tk="${t.id}"><td><b>${t.rep}</b></td><td>${esc(rep.name)}</td><td>${rep.owner}</td><td>${t.time}</td><td class="n">${t.items.length}</td><td class="n">${pn||'—'}</td><td><span class="chip ${pn?'c-warn':'c-ok'}">${pn?'待处理':'已处理'}</span></td><td>${t.handler||'—'}</td>
- <td><button class="link" data-act="hdl" data-id="${t.id}">${pn&&!mine?'处理申诉':'查看申诉'}</button><button class="link" data-act="open" data-id="${t.rep}">报告详情</button></td></tr>`}).join('')||`<tr><td colspan="9" class="muted" style="padding:34px;text-align:center">${myTickets().length?'没有符合条件的申诉':'暂无申诉'}</td></tr>`}</tbody></table></div></div>${hfPop()}`}
+ <div class="tw"><table class="tbl mc"><thead><tr><th>检查标识</th><th>姓名</th>${hfTh('adoc')}${hfTh('atime')}<th>条目</th><th>待处理</th>${hfTh('ast')}${hfTh('ahdl')}<th>操作</th></tr></thead><tbody>
+ ${ts.map(t=>{const rep=R_(t.rep),pn=pendN(t),mine=rep.owner==='赵医生'&&S.role==='审核医生';return `<tr class="rw" data-tk="${t.id}"><td class="m1"><b>${t.rep}</b></td><td class="m2">${esc(rep.name)}</td><td data-l="医生">${rep.owner}</td><td data-l="最近提交">${t.time}</td><td class="n" data-l="条目">${t.items.length}</td><td class="n" data-l="待处理">${pn||'—'}</td><td data-l="状态"><span class="chip ${pn?'c-warn':'c-ok'}">${pn?'待处理':'已处理'}</span></td><td data-l="处理人">${t.handler||'—'}</td>
+ <td class="ma"><button class="link" data-act="hdl" data-id="${t.id}">${pn&&!mine?'处理申诉':'查看申诉'}</button><button class="link" data-act="open" data-id="${t.rep}">报告详情</button></td></tr>`}).join('')||`<tr><td colspan="9" class="muted" style="padding:34px;text-align:center">${myTickets().length?'没有符合条件的申诉':'暂无申诉'}</td></tr>`}</tbody></table></div></div>${hfPop()}`}
 function renderHandle(){
  const t=S.tickets.find(x=>x.id===S.hdl.id);const rep=R_(t.rep);const d=S.hdl.dec;
  const recuse=S.role==='审核医生'&&rep.owner==='赵医生';const canAct=!recuse&&pendN(t)>0;
