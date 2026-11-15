@@ -580,12 +580,13 @@ function genStats(){let s=7;const rnd=()=>{s|=0;s=s+0x6D2B79F5|0;let t=Math.imul
  const pw=PN.map(n=>({'甲状腺':22,'乳腺':16,'肝胆胰脾':19,'泌尿':12,'妇科':9,'心脏':8,'颈部血管':7}[n]||1)),psum=pw.reduce((a,b)=>a+b,0);
  const pick=(w,sum)=>{let r=rnd()*sum;for(let i=0;i<w.length;i++){r-=w[i];if(r<=0)return i}return w.length-1};
  const bias={'张医生':.55,'王医生':.5,'陈医生':.62,'赵医生':.45,'李医生':.58,'周医生':.4},vol={'张医生':7,'王医生':6,'陈医生':5,'赵医生':6,'李医生':4,'周医生':5};
- const recs=[];for(let d=29;d>=0;d--){const wk=[0,6].includes(new Date(2026,10,14-d).getDay());
+ const recs=[];const gen=d=>{const wk=[0,6].includes(new Date(2026,10,14-d).getDay());
   DOCS.forEach(doc=>{const n=Math.round((vol[doc]+rnd()*4)*(wk?.35:1));for(let i=0;i<n;i++){const part=PN[pick(pw,psum)],r=rnd();
    const st=d===0&&r<.05?'质控中':r<.03?'失败':'完成';const iss=[];
    if(st==='完成'&&rnd()>bias[doc]){const k=1+Math.floor(rnd()*3);for(let j=0;j<k;j++){const t=RN[pick(tw,tsum)],q=rnd();
     let o='none';if(q<.17)o='ig';else if(q<.245){const z=rnd();o=z<.07?'ok':z<.92?'rej':'pend'}iss.push({t,o})}}
-   recs.push({d,doc,part,st,pos:rnd()<.56,iss,ms:st==='完成'&&rnd()<.022?RN[pick(tw,tsum)]:null})}})}
+   recs.push({d,doc,part,st,pos:rnd()<.56,iss,ms:st==='完成'&&rnd()<.022?RN[pick(tw,tsum)]:null})}})};
+ for(let d=29;d>=0;d--)gen(d);for(let d=364;d>=30;d--)gen(d);
  return recs}
 function aggregate(from,to,doc){const r=STATS.filter(x=>x.d<=from&&x.d>=to&&(doc==='全部'||x.doc===doc));
  const Cs=r.filter(x=>x.st==='完成'),F=r.filter(x=>x.st==='失败').length,C=Cs.length;
@@ -595,9 +596,13 @@ function aggregate(from,to,doc){const r=STATS.filter(x=>x.d<=from&&x.d>=to&&(doc
    if(i.o==='ig'){ig++;bump(byType,i.t,'ig');bump(byPart,x.part,'ig')}
    else if(i.o!=='none'){ap++;bump(byType,i.t,'ap');bump(byPart,x.part,'ap');if(i.o==='ok'){ok++;bump(byType,i.t,'ok');bump(byPart,x.part,'ok')}else if(i.o==='rej'){rej++;bump(byType,i.t,'rej');bump(byPart,x.part,'rej')}else{pend++;bump(byType,i.t,'pend');bump(byPart,x.part,'pend')}}});
   if(x.ms){ms++;bump(byType,x.ms,'ms');bump(byPart,x.part,'ms')}});
- const daily=[];for(let d=from;d>=to;d--){const c=Cs.filter(x=>x.d===d);daily.push({d,C:c.length,P:c.filter(x=>x.iss.length).length})}
+ const dc={},dp={};Cs.forEach(x=>{dc[x.d]=(dc[x.d]||0)+1;if(x.iss.length)dp[x.d]=(dp[x.d]||0)+1});const daily=[];for(let d=from;d>=to;d--)daily.push({d,C:dc[d]||0,P:dp[d]||0})
  return{C,F,rate:C+F?C/(C+F):null,pos:Cs.filter(x=>x.iss.length).length,E,avg:C?E/C:null,types,byType,byPart,ig,ap,ok,rej,pend,ms,daily}}
 const dstr=d=>{const t=new Date(2026,10,14-d);return p2(t.getMonth()+1)+'-'+p2(t.getDate())};
+const fdate=d=>new Date(2026,10,14-d).getFullYear()+'-'+dstr(d);
+/* 超过 62 天按周合并（从结束日往前每 7 天一段，最早不足 7 天的并入前一段） */
+function weekly(daily){const out=[];for(let i=daily.length;i>0;i-=7){const seg=daily.slice(Math.max(0,i-7),i);out.unshift({d:seg[0].d,e:seg[seg.length-1].d,C:seg.reduce((a,x)=>a+x.C,0),P:seg.reduce((a,x)=>a+x.P,0)})}
+ if(out.length>1&&out[0].d-out[0].e<6){const a=out.shift();out[0]={d:a.d,e:out[0].e,C:a.C+out[0].C,P:a.P+out[0].P}}return out}
 function rangeOf(){const g=S.st;if(g.range==='custom'&&g.from&&g.to){const off=s=>Math.round((new Date(2026,10,14)-new Date(s))/864e5);return[Math.max(off(g.from),off(g.to)),Math.min(off(g.from),off(g.to))]}
  return[+g.range-1,0]}
 const pct1=v=>v==null?'—':(v*100).toFixed(1)+'%';
@@ -611,12 +616,12 @@ function lineChart(daily){const W=1000,H=200,l=14,r=14,t=26,b=28,iw=W-l-r,n=dail
  let g=[0,.5,1].map(f=>`<line x1="${l}" x2="${W-r}" y1="${Y(mx/1.12*f)}" y2="${Y(mx/1.12*f)}" stroke="var(--line)" stroke-dasharray="${f?'3 4':'0'}"/>`).join('');
  g+=`<path d="${path(pc)}L${X(n-1)} ${H-b}L${X(0)} ${H-b}Z" fill="var(--brand)" opacity=".13"/><path d="${path(pe)}" fill="none" stroke="${C_ERR}" stroke-width="2" stroke-linejoin="round" opacity=".9"/><path d="${path(pc)}" fill="none" stroke="var(--brand)" stroke-width="2.5" stroke-linejoin="round"/>`;
  const step=Math.ceil(n/7),lab=(d,i)=>n<=14||i%step===0||i===n-1||d.C===mC;
- daily.forEach((d,i)=>{g+=`<circle cx="${pc[i][0]}" cy="${pc[i][1]}" r="3.6" fill="var(--panel)" stroke="var(--brand)" stroke-width="2"><title>${dstr(d.d)}：质控 ${d.C} 份，发现错误 ${d.P} 份，未发现错误 ${d.C-d.P} 份</title></circle>`;
+ daily.forEach((d,i)=>{g+=`<circle cx="${pc[i][0]}" cy="${pc[i][1]}" r="3.6" fill="var(--panel)" stroke="var(--brand)" stroke-width="2"><title>${d.e!=null?fdate(d.d)+' ~ '+fdate(d.e):dstr(d.d)}：质控 ${d.C} 份，发现错误 ${d.P} 份，未发现错误 ${d.C-d.P} 份</title></circle>`;
   if(lab(d,i))g+=`<text x="${pc[i][0]}" y="${pc[i][1]-9}" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--fg)">${d.C}</text>`;
   if(n<=14||i%step===0||i===n-1)g+=`<text x="${X(i)}" y="${H-8}" text-anchor="middle" font-size="11" fill="var(--muted)">${dstr(d.d)}</text>`});
- return`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="每日质控数量折线图">${g}</svg>`}
+ return`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="质控数量折线图">${g}</svg>`}
 function donut(a,b,c1,c2,center,sub){const R=52,C=2*Math.PI*R,tot=a+b||1,la=C*a/tot;
- return`<svg viewBox="0 0 140 140" width="132" height="132" role="img" aria-label="${center}"><circle cx="70" cy="70" r="${R}" fill="none" stroke="${c2}" stroke-width="17"/><circle cx="70" cy="70" r="${R}" fill="none" stroke="${c1}" stroke-width="17" stroke-dasharray="${la} ${C-la}" transform="rotate(-90 70 70)"/><text x="70" y="68" text-anchor="middle" font-size="26" font-weight="700" fill="var(--fg)">${center}</text><text x="70" y="88" text-anchor="middle" font-size="11.5" fill="var(--muted)">${sub}</text></svg>`}
+ return`<svg viewBox="0 0 140 140" width="132" height="132" role="img" aria-label="${center}"><circle cx="70" cy="70" r="${R}" fill="none" stroke="${c2}" stroke-width="17"/><circle cx="70" cy="70" r="${R}" fill="none" stroke="${c1}" stroke-width="17" stroke-dasharray="${la} ${C-la}" transform="rotate(-90 70 70)"/><text x="70" y="68" text-anchor="middle" font-size="${String(center).length>5?20:26}" font-weight="700" fill="var(--fg)">${center}</text><text x="70" y="88" text-anchor="middle" font-size="11.5" fill="var(--muted)">${sub}</text></svg>`}
 function ring(p,c){const R=24,C=2*Math.PI*R;return`<svg viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="质控成功率 ${pct1(p)}"><circle cx="32" cy="32" r="${R}" fill="none" stroke="var(--gray-soft)" stroke-width="7"/><circle cx="32" cy="32" r="${R}" fill="none" stroke="${c}" stroke-width="7" stroke-linecap="round" stroke-dasharray="${C*(p||0)} ${C}" transform="rotate(-90 32 32)"/></svg>`}
 function ringSvg(items,tot,center,sub,popIdx){const R=60,SW=20,C=2*Math.PI*R,cx=90,cy=90;let acc=0,g='';
  items.forEach((it,i)=>{if(!it.v)return;const f=it.v/tot,len=Math.max(C*f-2.5,1.2),mid=(acc+f/2)*2*Math.PI-Math.PI/2,dx=i===popIdx?Math.cos(mid)*7:0,dy=i===popIdx?Math.sin(mid)*7:0;
@@ -644,8 +649,8 @@ function renderStats(){
  g.exp=g.exp||{};g.mode=g.mode||'n';g.dv=g.dv||'bar';g.rr=g.rr||'N';g.rd=g.rd||-1;
  const [f,t]=rangeOf(),len=f-t+1,A=aggregate(f,t,doc),hasPrev=f+len<=29,B=hasPrev?aggregate(f+len,t+len,doc):null;
  const fmtN=(v)=>String(Math.round(v)).replace(/\B(?=(\d{3})+$)/g,',');
- const flt=`<div class="row" style="margin-bottom:14px"><div class="seg">${[['7','近 7 天'],['30','近 30 天'],['custom','自定义']].map(o=>`<button class="${g.range===o[0]?'on':''}" data-act="strange" data-v="${o[0]}">${o[1]}</button>`).join('')}</div>
-  ${g.range==='custom'?`<input type="date" class="inp" data-chg="sfrom" value="${g.from}" min="2026-10-16" max="2026-11-14"> — <input type="date" class="inp" data-chg="sto" value="${g.to}" min="2026-10-16" max="2026-11-14">`:''}
+ const flt=`<div class="row" style="margin-bottom:14px"><div class="seg">${[['7','近 7 天'],['30','近 30 天'],['365','近 1 年'],['custom','自定义']].map(o=>`<button class="${g.range===o[0]?'on':''}" data-act="strange" data-v="${o[0]}">${o[1]}</button>`).join('')}</div>
+  ${g.range==='custom'?`<input type="date" class="inp" data-chg="sfrom" value="${g.from}" min="2025-11-15" max="2026-11-14"> — <input type="date" class="inp" data-chg="sto" value="${g.to}" min="2025-11-15" max="2026-11-14">`:`<span class="muted small">${fdate(f)} ~ ${fdate(t)}</span>`}
   ${own?'<span class="chip c-info nd">仅我的报告</span>':''}</div>`;
  const ex=(k,label)=>`<button class="link" data-act="sexp" data-v="${k}">${g.exp[k]?'收起':'展开全部'}</button>`;
  /* 1 质控数量 */
@@ -653,13 +658,13 @@ function renderStats(){
  const rdl=pRate==null||dRate==null?'':`<span class="muted small">${dRate>=pRate?'↑':'↓'} ${(Math.abs(dRate-pRate)*100).toFixed(1)} 个百分点 vs 上期</span>`;
  const qc=`<div class="card"><h3 style="margin:0">质控数量</h3><div style="margin-bottom:14px"></div>
   <div class="qtop"><div><span class="bigno">${fmtN(A.C)}</span></div>
-   <div class="row" style="gap:16px;flex-wrap:nowrap">${donut(E1,N1,C_ERR,C_NONE,fmtN(A.C),'份报告')}<div class="dleg"><div><i style="background:${C_ERR}"></i>发现错误 <b>${E1}</b></div><div><i style="background:${C_NONE}"></i>未发现错误 <b>${N1}</b></div><div class="rate">错误检出率 <b>${pct1(dRate)}</b></div></div></div>
+   <div class="row" style="gap:16px;flex-wrap:nowrap">${donut(E1,N1,C_ERR,C_NONE,fmtN(A.C),'份报告')}<div class="dleg"><div><i style="background:${C_ERR}"></i>发现错误 <b>${fmtN(E1)}</b></div><div><i style="background:${C_NONE}"></i>未发现错误 <b>${fmtN(N1)}</b></div><div class="rate">错误检出率 <b>${pct1(dRate)}</b></div></div></div>
 </div>
-  <div class="lgd" style="margin:16px 0 2px"><span><i style="background:var(--brand)"></i>质控数量</span><span><i style="background:${C_ERR}"></i>其中发现错误</span><span class="muted small" style="margin-left:auto">每日趋势（${dstr(f)} ~ ${dstr(t)}）</span></div>${lineChart(A.daily)}<div class="muted small" style="margin-top:6px;text-align:right">质控成功率 ${pct1(A.rate)} · 失败 ${A.F} 次${A.F?` <button class="link" data-act="stfail">查看</button>`:''}</div></div>`;
+  <div class="lgd" style="margin:16px 0 2px"><span><i style="background:var(--brand)"></i>质控数量</span><span><i style="background:${C_ERR}"></i>其中发现错误</span><span class="muted small" style="margin-left:auto">${len>62?'每周':'每日'}趋势（${len>62?fdate(f):dstr(f)} ~ ${len>62?fdate(t):dstr(t)}）</span></div>${lineChart(len>62?weekly(A.daily):A.daily)}<div class="muted small" style="margin-top:6px;text-align:right">质控成功率 ${pct1(A.rate)} · 失败 ${A.F} 次${A.F?` <button class="link" data-act="stfail">查看</button>`:''}</div></div>`;
  /* 2 错误排名 */
  const tl=Object.entries(A.types).sort((a,b)=>b[1]-a[1]),top=tl.slice(0,8),rest=tl.slice(8),oth=rest.reduce((s,x)=>s+x[1],0),mx=Math.max(1,...tl.map(x=>x[1]));
  const rk=(n,i,c,sub)=>`<div class="rk ${sub?'sub':''}"><span class="no ${i<3&&!sub?'hi':''}">${sub?'·':i+1}</span><span>${n}</span><div class="rb"><div style="width:${c/mx*100}%;background:${i<3&&!sub?'var(--brand)':'color-mix(in srgb,var(--brand) 45%,var(--panel))'}"></div></div><b>${c}</b><em>${A.E?(c/A.E*100).toFixed(1):'0.0'}%</em></div>`;
- const er=`<div class="card"><div class="row"><div><h3 style="margin:0">错误数量与类型排名</h3></div><div style="margin-left:auto;text-align:right"><span class="muted small">总错误 </span><b style="font-size:22px">${A.E}</b><span class="muted small"> 条 · 平均每份 ${A.avg==null?'—':A.avg.toFixed(2)} 条</span>${rest.length?`<div>${ex('types')}</div>`:''}</div></div>
+ const er=`<div class="card"><div class="row"><div><h3 style="margin:0">错误数量与类型排名</h3></div><div style="margin-left:auto;text-align:right"><span class="muted small">总错误 </span><b style="font-size:22px">${fmtN(A.E)}</b><span class="muted small"> 条 · 平均每份 ${A.avg==null?'—':A.avg.toFixed(2)} 条</span>${rest.length?`<div>${ex('types')}</div>`:''}</div></div>
   ${top.length?top.map((x,i)=>rk(x[0],i,x[1])).join('')+(rest.length&&!g.exp.types?`<button class="rk o rowbtn" data-act="sexp" data-v="types"><span class="no">${g.exp.types?'−':'+'}</span><span>其他 ${rest.length} 类</span><div class="rb"><div style="width:${Math.min(100,oth/mx*100)}%;background:var(--line)"></div></div><b>${oth}</b><em>${A.E?(oth/A.E*100).toFixed(1):'0.0'}%</em></button>`:'')+(g.exp.types?rest.map((x,i)=>rk(x[0],top.length+i,x[1])).join(''):''):'<div class="muted" style="padding:20px 0">所选时间内没有错误记录</div>'}</div>`;
  /* 3 医生排名（管理员） */
  let dr='';
@@ -751,9 +756,10 @@ function fieldsOk(m){return FIELDS.filter(f=>f[1]).every(f=>S.cap[m][f[0]])}
 function setCap(){const c=S.cap,m=c.mode,d=c[m];const ctlOn=c.methods.find(x=>x.k==='ctl').on,ocrOn=c.methods.find(x=>x.k==='ocr').on;
  const hkWarn=/^(Ctrl\+C|Ctrl\+V|Ctrl\+X|Ctrl\+Z|Ctrl\+A|Alt\+F4)$/i.test(c.hk);
  const ok=(!ctlOn||fieldsOk('ctl'))&&(!ocrOn||fieldsOk('ocr'))&&!hkWarn;
- return `<div class="grid2b"><div class="card"><h3>目标窗口</h3><p class="muted small">在原系统里点击一次目标窗口，系统自动识别并填入下面三项（只读）。句柄每次启动都会变，运行时按这三项重新匹配。</p>
-  <div class="kv" style="margin-bottom:12px"><div>窗口标题<b>${esc(c.win.title)}</b></div><div>进程名<b>${esc(c.win.proc)}</b></div><div>类名<b>${esc(c.win.cls)}</b></div></div>
-  <div class="row"><span class="chip ${c.win.state==='已匹配'?'c-ok':'c-warn'}">${c.win.state}</span><span class="muted small">当前句柄 ${c.win.handle}</span><button class="btn sm" style="margin-left:auto" data-act="rewin">重新选择窗口</button></div></div>
+ return `<div class="grid2b"><div class="card"><div class="row"><h3 style="margin:0">目标窗口</h3><span class="chip c-info nd">拾取字段时自动识别</span></div>
+  <div class="row" style="margin:14px 0 10px"><div class="kv"><div>窗口标题<b>${esc(c.win.title)}</b></div></div><span class="chip ${c.win.state==='已匹配'?'c-ok':'c-warn'}">${c.win.state}</span></div>
+  <button class="link small" style="padding:2px 0" data-act="wtech">${c.techOpen?'▾':'▸'} 技术信息</button>
+  ${c.techOpen?`<div class="kv" style="margin-top:8px"><div>进程名<b>${esc(c.win.proc)}</b></div><div>类名<b>${esc(c.win.cls)}</b></div><div>当前句柄<b>${c.win.handle}</b></div></div>`:''}</div>
  <div class="card"><h3>读取方式优先级</h3><p class="muted small">按从上到下的顺序尝试，前一种读不到再用下一种。</p>${c.methods.map((x,i)=>`<div class="row" style="padding:7px 0;border-top:${i?'1px solid var(--line)':'0'}"><b class="num" style="width:18px">${i+1}</b><span style="flex:1">${x.n}</span><label class="sw"><input type="checkbox" data-chg="mon" data-i="${i}" ${x.on?'checked':''}><span></span></label><button class="btn sm" ${i?'':'disabled'} data-act="mup" data-i="${i}">↑</button><button class="btn sm" ${i<c.methods.length-1?'':'disabled'} data-act="mdn" data-i="${i}">↓</button></div>`).join('')}</div></div>
  <div class="card"><div class="row" style="margin-bottom:6px"><h3 style="margin:0">字段配置</h3><div class="seg" style="margin-left:auto"><button class="${m==='ctl'?'on':''}" data-act="mode" data-v="ctl">控件读取</button><button class="${m==='ocr'?'on':''}" data-act="mode" data-v="ocr">OCR 读取</button></div></div>
   <p class="muted small">在原系统界面上按字段顺序${m==='ctl'?'依次点击对应控件':'依次框选对应区域'}，系统自动记录并跳到下一项；读到的文本由你核对，不对就点“重拾”。</p>
@@ -907,12 +913,12 @@ document.addEventListener('click',e=>{
  case'imppre':S.imp.res=parseImp(S.imp.text);break;
  case'impgo':{const ok=S.imp.res.filter(r=>!r.err);ok.forEach(r=>S.maps.push([r.name,r.ps]));S.layer=null;toast('已导入 '+ok.length+' 行');break}
  case'ubbind':{const p=S.ub[i];if(!p){toast('请先选择对应部位');return}const u=S.unb[i];S.maps.push([u.n,[p]]);S.unb.splice(i,1);S.ub={};toast('已绑定：'+u.n+' → '+p);break}
- case'rewin':c.win.handle=wid();c.win.state='已匹配';c.dirty=true;toast('请在原系统上点击一次目标窗口：已自动识别并更新，新句柄 '+c.win.handle);break;
+ case'wtech':c.techOpen=!c.techOpen;break;case'rewin':c.win.handle=wid();c.win.state='已匹配';c.dirty=true;toast('请在原系统上点击一次目标窗口：已自动识别并更新，新句柄 '+c.win.handle);break;
  case'mup':[c.methods[i-1],c.methods[i]]=[c.methods[i],c.methods[i-1]];c.dirty=true;break;
  case'mdn':[c.methods[i+1],c.methods[i]]=[c.methods[i],c.methods[i+1]];c.dirty=true;break;
  case'mode':c.mode=v;break;
- case'simf':{const f=FIELDS.find(q=>q[0]===el.dataset.f);c[c.mode][f[0]]={path:f[2],box:f[3],text:f[4]};c.dirty=true;break}
- case'simall':FIELDS.forEach(f=>c[c.mode][f[0]]={path:f[2],box:f[3],text:f[4]});c.dirty=true;toast('演示：已按顺序读取全部字段');break;
+ case'simf':{const f=FIELDS.find(q=>q[0]===el.dataset.f);c[c.mode][f[0]]={path:f[2],box:f[3],text:f[4]};c.win.state='已匹配';c.dirty=true;break}
+ case'simall':FIELDS.forEach(f=>c[c.mode][f[0]]={path:f[2],box:f[3],text:f[4]});c.win.state='已匹配';c.dirty=true;toast('演示：已按顺序读取全部字段，并自动识别窗口「'+c.win.title+'」');break;
  case'clrf':delete c[c.mode][el.dataset.f];c.dirty=true;toast('已清除，请在原系统上重新'+(c.mode==='ctl'?'点击':'框选')+'该字段');break;
  case'hkrec':c.hkRec=true;break;
  case'capsave':{S.caplog.push({time:nowF(),who:'管理员',note:'采集配置保存：读取方式 '+c.methods.filter(q=>q.on).map(q=>q.n).join(' → ')+'；快捷键 '+c.hk+'；超时 '+c.timeout+' 秒'});c.dirty=false;toast('已保存采集配置，之后的采集按新配置执行');break}
