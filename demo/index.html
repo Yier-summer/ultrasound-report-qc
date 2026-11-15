@@ -338,7 +338,7 @@ function navBadge(t,s){const pend=S.tickets.reduce((a,x)=>a+pendN(x),0);if(t==='
 const TITLES={list:'报告列表',detail:'质控详情',stats:'统计',settings:'设置'};
 function renderChrome(){
  $('#side').innerHTML=`<div class="logo"><i>✓</i><b>超声报告质控</b></div>${navTree().map(g=>`<div class="ng"><div class="nh">${g[0]}</div>${g[2].map(n=>{const bd=navBadge(n[0],n[1]);return `<button class="nv ${navOn(n[0],n[1])?'on':''}" data-act="go" data-v="${n[0]}:${n[1]}" title="${n[2]}"><span class="ic">${n[3]}</span><span class="tx">${n[2]}</span>${bd?`<span class="dot">${bd}</span>`:''}</button>`}).join('')}</div>`).join('')}<button class="colbtn" data-act="col" title="${S.col?'展开侧栏':'收起侧栏'}">${S.col?'»':'« 收起'}</button><div class="foot">原型演示 · 数据均为示例</div>`;$('#app').classList.toggle('col',!!S.col);$('#side').insertAdjacentHTML('beforeend',`<div class="demo"><button class="demobtn" data-act="demo" title="仅用于原型演示，真实产品里没有这个入口">${S.col?'⋯':'演示工具'}</button>${S.demoOpen?`<div class="pop"><div class="pop"><label>状态模拟（只影响详情页展示）<select class="sel" data-chg="sim">${[['','按真实数据'],['running','质控中'],['ok','质控完成 · 无问题'],['issues','质控完成 · 有问题'],['fail','质控失败'],['ignored','问题全部已忽略']].map(o=>`<option value="${o[0]}" ${S.sim===o[0]?'selected':''}>${o[1]}</option>`).join('')}</select></label>
- <label>回填 PACS 的结果<select class="sel" data-chg="backfill">${[['ok','成功'],['pacs','失败 · PACS 无响应'],['changed','失败 · 原系统内容已变化'],['nosupport','当前 PACS 不支持写入']].map(o=>`<option value="${o[0]}" ${S.backfill===o[0]?'selected':''}>${o[1]}</option>`).join('')}</select></label><button class="btn sm" data-act="reset">重置全部演示数据</button></div></div>`:''}</div>`);
+ <label>回填原系统的结果<select class="sel" data-chg="backfill">${[['ok','成功'],['pacs','失败 · 原系统无响应'],['changed','失败 · 原系统内容已变化'],['nosupport','当前原系统不支持写入']].map(o=>`<option value="${o[0]}" ${S.backfill===o[0]?'selected':''}>${o[1]}</option>`).join('')}</select></label><button class="btn sm" data-act="reset">重置全部演示数据</button></div></div>`:''}</div>`);
  $('#top').innerHTML=`<h1>${TITLES[S.tab]}</h1><span class="sp"></span>
  <div class="seg">${['报告医生','审核医生','管理员'].map(r=>`<button class="${S.role===r?'on':''}" data-act="role" data-v="${r}">${r}</button>`).join('')}</div>
  `}
@@ -373,6 +373,10 @@ const isAp=()=>S.tab==='list'&&S.sub==='ap'&&isRev();
 const curF=()=>isAp()?S.afilt:S.filt;
 const hfKeys=()=>isAp()?['adoc','atime','ast','ahdl']:['sex','part','doc','time','st','tk'].filter(k=>k!=='doc'||S.role!=='报告医生');
 const hfVal=k=>HF[k].g()[HF[k].f];
+/* 多选：[] = 不筛选（下拉里显示为全部勾选）；全部勾选时自动回到 []；一个都不勾 = ['__none__']（无结果） */
+const hfAll=k=>HF[k].o().map(x=>Array.isArray(x)?x[0]:x);
+const hfSel=k=>{const v=hfVal(k);return v.length?v.filter(x=>x!=='__none__'):hfAll(k)};
+function hfSet(k,sel){const all=hfAll(k);HF[k].g()[HF[k].f]=all.every(x=>sel.includes(x))?[]:sel.length?sel:['__none__']}
 function hfOn(k){const v=hfVal(k),t=HF[k].t;return t==='one'?v!=='全部':t==='time'?!!v.k:v.length>0}
 function hfClear(k){const h=HF[k];h.g()[h.f]=h.t==='one'?'全部':h.t==='time'?{k:'',from:'',to:''}:[]}
 /* 申诉“最近提交”是“今天 / 昨天 hh:mm”，换算成日期 */
@@ -411,7 +415,7 @@ function hfPop(){const k=S.hf;if(!k||!hfKeys().includes(k))return'';const h=HF[k
  else if(h.t==='time')body=`<div class="hfl">${[['today','今天'],['7','近 7 天'],['30','近 30 天'],['custom','自定义']].map(([x,l])=>opt('hftime',x,l,v.k===x,1)).join('')}</div>
   <div class="hfd"><label>开始<input class="inp" type="date" value="${v.from}" max="${TODAY}" data-chg="hft1"></label><label>结束<input class="inp" type="date" value="${v.to}" max="${TODAY}" data-chg="hft2"></label></div>`;
  else{const os=h.o().map(x=>Array.isArray(x)?x:[x,x]);
-  body=`${h.q?`<input class="inp" placeholder="搜索${h.l}" value="${esc(S.hfq)}" data-in="hfq">`:''}<div class="hfl"><button class="hfo hfall" data-act="hfall" data-v="${k}"><i class="ck"></i>全选</button>${os.map(([x,l])=>opt('hfpick',x,l,v.includes(x))).join('')}${h.q?'<div class="hfe muted small" hidden>无匹配项</div>':''}</div>`}
+  body=`${h.q?`<input class="inp" placeholder="搜索${h.l}" value="${esc(S.hfq)}" data-in="hfq">`:''}<div class="hfl"><button class="hfo hfall" data-act="hfall" data-v="${k}"><i class="ck"></i>全选</button>${os.map(([x,l])=>opt('hfpick',x,l,!v.length||v.includes(x))).join('')}${h.q?'<div class="hfe muted small" hidden>无匹配项</div>':''}</div>`}
  return `<div class="hfp" id="hfp" role="dialog" aria-label="筛选${h.l}">${body}<div class="hff"><span class="muted small">${h.l}</span><button class="link" data-act="hfclr" data-v="${k}" ${hfOn(k)?'':'disabled'}>清除</button></div></div>`}
 function hfFilterOpts(){const p=$('#hfp');if(!p)return;const q=p.querySelector('[data-in=hfq]')?S.hfq.trim().toLowerCase():'';const vis=[];
  p.querySelectorAll('.hfo[data-n]').forEach(b=>{const ok=!q||b.textContent.toLowerCase().includes(q);b.hidden=!ok;if(ok)vis.push(b)});const e=p.querySelector('.hfe');if(e)e.hidden=vis.length>0;
@@ -482,7 +486,7 @@ function renderDetail(){
  const hist=locked?`<div class="banner b-gray">正在查看历史版本 ${ver.v}，只读。<button class="btn sm" data-act="toLatest">回到最新版本</button></div>`:'';
  let body;
  if(S.editing&&c.latest){const d=S.draft;body=['findings','diagnosis'].map(f=>`<h4>${FN[f]}</h4><textarea data-in="${f}" rows="5">${esc(d[f])}</textarea>`).join('')+
-  `<div class="row" style="margin-top:12px"><button class="btn p" ${editCount()?'':'disabled'} data-act="fillAsk">回填至 PACS</button><button class="btn" data-act="editX">放弃修改</button></div>`}
+  `<div class="row" style="margin-top:12px"><button class="btn p" ${editCount()?'':'disabled'} data-act="fillAsk">回填至原系统</button><button class="btn" data-act="editX">放弃修改</button></div>`}
  else body=['findings','diagnosis'].map(f=>`<h4>${FN[f]}</h4><div class="text" style="margin-bottom:14px">${hlText(ver.text[f],f,probs.filter(p=>p.ticket!=='accepted'),asIgn)}</div>`).join('');
  const todo=probs.filter(p=>!p.ignored&&p.ticket!=='accepted'&&!asIgn),ign=probs.filter(p=>p.ignored||asIgn),done=probs.filter(p=>p.ticket==='accepted'&&!asIgn&&!p.ignored);
  const card=(p,g,no)=>`<div class="pc ${g?'g':''} ${S.sel===p.id?'sel':''}" data-act="selp" data-p="${p.id}"><div class="row">${g?'':`<span class="no">${no}</span>`}<b>${p.type}</b>${p.src==='黑名单'?'<span class="chip c-gray nd">词库</span>':''}${p.ticket==='pending'?'<span class="chip c-pur">申诉中</span>':''}${p.ticket==='rejected'?'<span class="chip c-gray nd">申诉被驳回</span>':''}${p.ticket==='accepted'?'<span class="chip c-ok nd">确认为误报</span>':''}</div>
@@ -516,7 +520,7 @@ function renderLayer(){
   const rows=['findings','diagnosis'].map(f=>({f,same:a.text[f]===b.text[f]})).filter(r=>!(L.only&&r.same));
   return O(`<h2>版本对比</h2><div class="row" style="margin-bottom:12px"><select class="sel" data-chg="cmpA">${vs.map(v=>`<option ${v.v===L.a?'selected':''}>${v.v}</option>`).join('')}</select> → <select class="sel" data-chg="cmpB">${vs.map(v=>`<option ${v.v===L.b?'selected':''}>${v.v}</option>`).join('')}</select><label class="small"><input type="checkbox" data-chg="cmpOnly" ${L.only?'checked':''}> 只看变化</label></div>${rows.map(r=>`<h4>${FN[r.f]} ${r.same?'<span class="chip c-gray nd">无变化</span>':''}</h4><div class="text" style="margin-bottom:12px">${dif(a.text[r.f],b.text[r.f])}</div>`).join('')||'<p class="muted">两个版本没有差异</p>'}`,'wide')}
  if(L.t==='img'){const c=ctx();return `<div class="drawer"><button class="x" data-act="close">×</button><h2>原图（${c.ver.v}）</h2><p class="muted small">OCR 采集时保存的截图，只读。</p><div class="box" style="background:#fff;color:#222;border:2px solid #9aa6ba"><div style="background:#cfd6e2;margin:-12px -14px 10px;padding:4px 10px;font-size:12px">超声工作站 · 检查报告</div><div style="font-size:13px;color:#555">${c.rep.parts.join('、')} · ${c.rep.sex} ${c.rep.age}岁</div><p style="margin:8px 0"><b>所见：</b>${esc(c.ver.text.findings)}</p><p><b>诊断：</b>${esc(c.ver.text.diagnosis)}</p></div><p class="muted small" style="margin-top:10px">与识别结果逐项对照，不一致时可在“编辑”里修改并回填。</p></div>`}
- if(L.t==='fill'){const c=ctx();return O(`<h2>确认回填至 PACS</h2><p class="muted small">以下内容将写入 PACS 中的报告。写入后会读回校验，一致才生成新版本。</p>${['findings','diagnosis'].filter(f=>S.draft[f]!==c.ver.text[f]).map(f=>`<h4>${FN[f]}</h4><div class="text" style="margin-bottom:12px">${dif(c.ver.text[f],S.draft[f])}</div>`).join('')}<div class="row" style="justify-content:flex-end"><button class="btn" data-act="close">取消</button><button class="btn p" data-act="fillGo">确认回填</button></div>`,'wide')}
+ if(L.t==='fill'){const c=ctx();return O(`<h2>确认回填至原系统</h2><p class="muted small">以下内容将写入原系统中的报告。写入后会读回校验，一致才生成新版本。</p>${['findings','diagnosis'].filter(f=>S.draft[f]!==c.ver.text[f]).map(f=>`<h4>${FN[f]}</h4><div class="text" style="margin-bottom:12px">${dif(c.ver.text[f],S.draft[f])}</div>`).join('')}<div class="row" style="justify-content:flex-end"><button class="btn" data-act="close">取消</button><button class="btn p" data-act="fillGo">确认回填</button></div>`,'wide')}
  if(L.t==='fillErr')return O(`<h2>${L.title}</h2><p>${L.msg}</p><div class="row" style="justify-content:flex-end">${L.copy?`<button class="btn" data-act="copyDraft">复制修改内容</button>`:''}${L.recollect?`<button class="btn p" data-act="recollect">重新采集</button>`:''}<button class="btn" data-act="close">知道了</button></div>`);
  if(L.t==='multi')return O(`<h2>找到多个报告窗口</h2><p class="muted small">请选择本次要质控的窗口。</p>${visibleReps().map((r,i)=>`<label class="box row" style="margin-bottom:8px;cursor:pointer"><input type="radio" name="mw" value="${r.id}" ${i===0?'checked':''}> 窗口 ${i+1}：${r.id} · ${esc(r.name)} · ${r.parts.join('、')}</label>`).join('')}<div class="row" style="justify-content:flex-end"><button class="btn" data-act="close">取消</button><button class="btn p" data-act="multiGo">选择</button></div>`);
  if(L.t==='manual')return O(`<h2>手工录入</h2><div class="row" style="margin-bottom:10px"><input class="inp" id="mId" placeholder="检查标识" value="US-DEMO-${String(S.reps.length+2).padStart(3,'0')}"><input class="inp" id="mName" placeholder="姓名" value="何某" style="width:100px"><select class="sel" id="mPart">${PN.map(p=>`<option>${p}</option>`).join('')}</select><select class="sel" id="mSex"><option>女</option><option>男</option></select><input class="inp" id="mAge" placeholder="年龄" style="width:80px" value="41"></div>
@@ -744,15 +748,15 @@ function fieldsOk(m){return FIELDS.filter(f=>f[1]).every(f=>S.cap[m][f[0]])}
 function setCap(){const c=S.cap,m=c.mode,d=c[m];const ctlOn=c.methods.find(x=>x.k==='ctl').on,ocrOn=c.methods.find(x=>x.k==='ocr').on;
  const hkWarn=/^(Ctrl\+C|Ctrl\+V|Ctrl\+X|Ctrl\+Z|Ctrl\+A|Alt\+F4)$/i.test(c.hk);
  const ok=(!ctlOn||fieldsOk('ctl'))&&(!ocrOn||fieldsOk('ocr'))&&!hkWarn;
- return `<div class="grid2b"><div class="card"><h3>目标窗口</h3><p class="muted small">在 PACS / 报告系统里点击一次目标窗口，系统自动识别并填入下面三项（只读）。句柄每次启动都会变，运行时按这三项重新匹配。</p>
+ return `<div class="grid2b"><div class="card"><h3>目标窗口</h3><p class="muted small">在原系统里点击一次目标窗口，系统自动识别并填入下面三项（只读）。句柄每次启动都会变，运行时按这三项重新匹配。</p>
   <div class="kv" style="margin-bottom:12px"><div>窗口标题<b>${esc(c.win.title)}</b></div><div>进程名<b>${esc(c.win.proc)}</b></div><div>类名<b>${esc(c.win.cls)}</b></div></div>
   <div class="row"><span class="chip ${c.win.state==='已匹配'?'c-ok':'c-warn'}">${c.win.state}</span><span class="muted small">当前句柄 ${c.win.handle}</span><button class="btn sm" style="margin-left:auto" data-act="rewin">重新选择窗口</button></div></div>
  <div class="card"><h3>读取方式优先级</h3><p class="muted small">按从上到下的顺序尝试，前一种读不到再用下一种。</p>${c.methods.map((x,i)=>`<div class="row" style="padding:7px 0;border-top:${i?'1px solid var(--line)':'0'}"><b class="num" style="width:18px">${i+1}</b><span style="flex:1">${x.n}</span><label class="sw"><input type="checkbox" data-chg="mon" data-i="${i}" ${x.on?'checked':''}><span></span></label><button class="btn sm" ${i?'':'disabled'} data-act="mup" data-i="${i}">↑</button><button class="btn sm" ${i<c.methods.length-1?'':'disabled'} data-act="mdn" data-i="${i}">↓</button></div>`).join('')}</div></div>
  <div class="card"><div class="row" style="margin-bottom:6px"><h3 style="margin:0">字段配置</h3><div class="seg" style="margin-left:auto"><button class="${m==='ctl'?'on':''}" data-act="mode" data-v="ctl">控件读取</button><button class="${m==='ocr'?'on':''}" data-act="mode" data-v="ocr">OCR 读取</button></div></div>
-  <p class="muted small">在 PACS 界面上按字段顺序${m==='ctl'?'依次点击对应控件':'依次框选对应区域'}，系统自动记录并跳到下一项；读到的文本由你核对，不对就点“重拾”。</p>
+  <p class="muted small">在原系统界面上按字段顺序${m==='ctl'?'依次点击对应控件':'依次框选对应区域'}，系统自动记录并跳到下一项；读到的文本由你核对，不对就点“重拾”。</p>
   <div class="grid2"><div><div class="tw"><table class="tbl"><thead><tr><th>字段</th><th>${m==='ctl'?'控件标识':'识别区域'}</th><th>读到的文本</th><th></th></tr></thead><tbody>${FIELDS.map(f=>{const x=d[f[0]];return `<tr><td>${f[0]}${f[1]?' <span class="chip c-bad nd">必填</span>':''}</td><td class="small muted">${x?(m==='ctl'?x.path:x.box):'—'}</td><td class="small" style="white-space:normal;min-width:180px;max-width:260px">${x?esc(x.text):'<span class="muted">未读取</span>'}</td><td>${x?`<button class="link" data-act="clrf" data-f="${f[0]}">重拾</button>`:`<button class="link" data-act="simf" data-f="${f[0]}">模拟拾取</button>`}</td></tr>`}).join('')}</tbody></table></div>
   <div class="row" style="margin-top:10px"><button class="btn sm" data-act="simall">演示：模拟拾取全部字段</button>${fieldsOk(m)?'<span class="chip c-ok">必填字段已读取</span>':'<span class="small bad">必填字段（检查所见、检查诊断、病历号）读取后才能保存</span>'}</div></div>
-  <div><div class="gifw"><img alt="${m==='ctl'?'控件读取':'OCR 读取'}操作演示" src="${GIF[m]}"></div><ol class="steps small" style="margin-top:10px"><li>打开报告页面，保持 PACS 窗口在最前。</li><li>按字段顺序，${m==='ctl'?'点击对应控件':'框选对应区域'}。</li><li>右侧自动显示读到的文本，核对是否正确。</li><li>读错的字段点“重拾”，重新${m==='ctl'?'点击':'框选'}即可。</li></ol></div></div></div>
+  <div><div class="gifw"><img alt="${m==='ctl'?'控件读取':'OCR 读取'}操作演示" src="${GIF[m]}"></div><ol class="steps small" style="margin-top:10px"><li>打开报告页面，保持原系统窗口在最前。</li><li>按字段顺序，${m==='ctl'?'点击对应控件':'框选对应区域'}。</li><li>右侧自动显示读到的文本，核对是否正确。</li><li>读错的字段点“重拾”，重新${m==='ctl'?'点击':'框选'}即可。</li></ol></div></div></div>
  <div class="card"><h3>采集快捷键与质控超时</h3><div class="row"><span>采集快捷键</span><button class="btn sm ${c.hkRec?'p':''}" data-act="hkrec">${c.hkRec?'请按下组合键…':esc(c.hk)}</button>${hkWarn?'<span class="bad small">与常用快捷键冲突，请换一个</span>':'<span class="muted small">点击后按下新组合键，需包含 Ctrl / Alt / Shift 之一；医生在悬浮窗上看到的是这里的设置，不能自行修改</span>'}</div>
   <div class="row" style="margin-top:12px"><span>质控超时时长</span><select class="sel" data-chg="to">${[10,20,30,60].map(v=>`<option value="${v}" ${c.timeout===v?'selected':''}>${v} 秒</option>`).join('')}</select><span class="muted small">默认 30 秒；超时按质控失败处理，医生可点“复检”重试</span></div></div>
  <div class="card"><div class="row"><button class="btn p" ${ok&&c.dirty?'':'disabled'} data-act="capsave">保存采集配置</button>${ctlOn&&!fieldsOk('ctl')?'<span class="bad small">控件读取的必填字段未读取</span>':''}${ocrOn&&!fieldsOk('ocr')?'<span class="bad small">OCR 的必填字段未读取</span>':''}${!c.dirty?'<span class="muted small">没有改动</span>':''}</div></div>`}
@@ -815,8 +819,8 @@ document.addEventListener('click',e=>{
  switch(a){
  case'hf':S.hf=S.hf===v?null:v;S.hfq='';break;
  case'hfone':{const h=HF[v];h.g()[h.f]=n;break}
- case'hfpick':{const arr=hfVal(v);const j=arr.indexOf(n);if(j<0)arr.push(n);else arr.splice(j,1);break}
- case'hfall':{const arr=hfVal(v);const vis=[...document.querySelectorAll('#hfp .hfo[data-n]:not([hidden])')].map(b=>b.dataset.n);if(vis.every(x=>arr.includes(x)))vis.forEach(x=>arr.splice(arr.indexOf(x),1));else vis.forEach(x=>{if(!arr.includes(x))arr.push(x)});break}
+ case'hfpick':{const sel=hfSel(v);const j=sel.indexOf(n);if(j<0)sel.push(n);else sel.splice(j,1);hfSet(v,sel);break}
+ case'hfall':{let sel=hfSel(v);const vis=[...document.querySelectorAll('#hfp .hfo[data-n]:not([hidden])')].map(b=>b.dataset.n);if(vis.every(x=>sel.includes(x)))sel=sel.filter(x=>!vis.includes(x));else vis.forEach(x=>{if(!sel.includes(x))sel.push(x)});hfSet(v,sel);break}
  case'hftime':{const T=hfVal(v);if(T.k===n)T.k='';else{T.k=n;if(n==='custom'&&!T.from){T.from='2026-11-01';T.to=TODAY}}break}
  case'hfclr':hfClear(v);break;
  case'hfclrall':curF().q='';hfKeys().forEach(hfClear);S.hf=null;break;
@@ -862,10 +866,10 @@ document.addEventListener('click',e=>{
  case'editStart':S.editing=true;S.draft={...x.ver.text};break;case'editX':S.editing=false;break;
  case'fillAsk':S.layer={t:'fill'};break;
  case'fillGo':{const bf=S.backfill;const Lg={time:nowF(),rep:x.rep.id,who:myName()};
-  if(bf==='ok'){const vv=mkVer(x.rec,{...S.draft},'回填');mkRun(x.rep,x.ri,vv,'质控中',{finishAt:Date.now()+1500,trigger:'回填后复检'});scheduleFinish();x.rep.changed=false;S.editing=false;S.layer=null;S.vi=null;S.runi=null;S.fills.push({...Lg,ok:true,note:'写入并读回校验一致，生成 '+vv.v});toast('已回填至 PACS，读回一致，生成新版本 '+vv.v+'，自动复检中')}
-  else if(bf==='pacs'){S.fills.push({...Lg,ok:false,note:'PACS 无响应'});S.layer={t:'fillErr',title:'回填失败',msg:'PACS 无响应，原报告未被改动。你的修改仍保留在草稿中，可稍后重试。'}}
+  if(bf==='ok'){const vv=mkVer(x.rec,{...S.draft},'回填');mkRun(x.rep,x.ri,vv,'质控中',{finishAt:Date.now()+1500,trigger:'回填后复检'});scheduleFinish();x.rep.changed=false;S.editing=false;S.layer=null;S.vi=null;S.runi=null;S.fills.push({...Lg,ok:true,note:'写入并读回校验一致，生成 '+vv.v});toast('已回填至原系统，读回一致，生成新版本 '+vv.v+'，自动复检中')}
+  else if(bf==='pacs'){S.fills.push({...Lg,ok:false,note:'原系统无响应'});S.layer={t:'fillErr',title:'回填失败',msg:'原系统无响应，原报告未被改动。你的修改仍保留在草稿中，可稍后重试。'}}
   else if(bf==='changed'){S.fills.push({...Lg,ok:false,note:'原系统内容已变化'});S.layer={t:'fillErr',title:'回填失败：内容已变化',msg:'原系统中的报告在你编辑期间被改动，为避免覆盖，本次未写入。请重新采集后再修改。',recollect:true,copy:true}}
-  else{S.fills.push({...Lg,ok:false,note:'PACS 不支持写入'});S.layer={t:'fillErr',title:'当前 PACS 不支持写入',msg:'可以复制修改后的内容，到原系统中手动粘贴，然后重新采集。',copy:true,recollect:true}}break}
+  else{S.fills.push({...Lg,ok:false,note:'原系统不支持写入'});S.layer={t:'fillErr',title:'当前原系统不支持写入',msg:'可以复制修改后的内容，到原系统中手动粘贴，然后重新采集。',copy:true,recollect:true}}break}
  case'copyDraft':{const txt=`检查所见：${S.draft.findings}\n检查诊断：${S.draft.diagnosis}`;try{navigator.clipboard.writeText(txt).then(()=>toast('已复制'),()=>toast('复制失败，请手动选择文字'))}catch(_){toast('复制失败，请手动选择文字')}return}
  case'hdl':S.hdl={id,dec:{}};break;
  case'dec':{const d=S.hdl.dec;d[pid]=d[pid]||{};d[pid].r=el.dataset.v;break}
@@ -900,13 +904,13 @@ document.addEventListener('click',e=>{
  case'imppre':S.imp.res=parseImp(S.imp.text);break;
  case'impgo':{const ok=S.imp.res.filter(r=>!r.err);ok.forEach(r=>S.maps.push([r.name,r.ps]));S.layer=null;toast('已导入 '+ok.length+' 行');break}
  case'ubbind':{const p=S.ub[i];if(!p){toast('请先选择对应部位');return}const u=S.unb[i];S.maps.push([u.n,[p]]);S.unb.splice(i,1);S.ub={};toast('已绑定：'+u.n+' → '+p);break}
- case'rewin':c.win.handle=wid();c.win.state='已匹配';c.dirty=true;toast('请在 PACS 上点击一次目标窗口：已自动识别并更新，新句柄 '+c.win.handle);break;
+ case'rewin':c.win.handle=wid();c.win.state='已匹配';c.dirty=true;toast('请在原系统上点击一次目标窗口：已自动识别并更新，新句柄 '+c.win.handle);break;
  case'mup':[c.methods[i-1],c.methods[i]]=[c.methods[i],c.methods[i-1]];c.dirty=true;break;
  case'mdn':[c.methods[i+1],c.methods[i]]=[c.methods[i],c.methods[i+1]];c.dirty=true;break;
  case'mode':c.mode=v;break;
  case'simf':{const f=FIELDS.find(q=>q[0]===el.dataset.f);c[c.mode][f[0]]={path:f[2],box:f[3],text:f[4]};c.dirty=true;break}
  case'simall':FIELDS.forEach(f=>c[c.mode][f[0]]={path:f[2],box:f[3],text:f[4]});c.dirty=true;toast('演示：已按顺序读取全部字段');break;
- case'clrf':delete c[c.mode][el.dataset.f];c.dirty=true;toast('已清除，请在 PACS 上重新'+(c.mode==='ctl'?'点击':'框选')+'该字段');break;
+ case'clrf':delete c[c.mode][el.dataset.f];c.dirty=true;toast('已清除，请在原系统上重新'+(c.mode==='ctl'?'点击':'框选')+'该字段');break;
  case'hkrec':c.hkRec=true;break;
  case'capsave':{S.caplog.push({time:nowF(),who:'管理员',note:'采集配置保存：读取方式 '+c.methods.filter(q=>q.on).map(q=>q.n).join(' → ')+'；快捷键 '+c.hk+'；超时 '+c.timeout+' 秒'});c.dirty=false;toast('已保存采集配置，之后的采集按新配置执行');break}
  case'strange':S.st.range=v;if(v==='custom'&&!S.st.from){S.st.from='2026-11-01';S.st.to='2026-11-14'}break;
