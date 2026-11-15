@@ -336,10 +336,13 @@ function navTree(){const rev=S.role!=='报告医生',adm=S.role==='管理员';
 function navOn(t,s){if(S.tab==='detail')return t==='list'&&s===(S.from==='ap'?'ap':'qc');if(S.tab!==t)return false;if(t==='list')return (S.role==='报告医生'?'qc':(S.sub||'qc'))===s;if(t==='settings')return (S.aset||(S.role==='管理员'?'cap':'req'))===s;return true}
 function navBadge(t,s){const pend=S.tickets.reduce((a,x)=>a+pendN(x),0);if(t==='list'&&s==='ap'&&pend)return pend;if(t==='settings'&&s==='lex'){const n=S.reqs.filter(r=>r.st==='待审核').length;return n}return 0}
 const TITLES={list:'报告列表',detail:'质控详情',stats:'统计',settings:'设置'};
+/* 页面标题：跟随侧栏当前项；部位对应、质控词库加“设置”二字 */
+function pageTitle(){if(S.tab==='detail')return TITLES.detail;const it=navTree().flatMap(g=>g[2]).find(x=>navOn(x[0],x[1]));if(!it)return TITLES[S.tab];
+ return ({'部位对应':'部位对应设置','质控词库':'质控词库设置'})[it[2]]||it[2]}
 function renderChrome(){
  $('#side').innerHTML=`<div class="logo"><i>✓</i><b>超声报告质控</b></div>${navTree().map(g=>`<div class="ng"><div class="nh">${g[0]}</div>${g[2].map(n=>{const bd=navBadge(n[0],n[1]);return `<button class="nv ${navOn(n[0],n[1])?'on':''}" data-act="go" data-v="${n[0]}:${n[1]}" title="${n[2]}"><span class="ic">${n[3]}</span><span class="tx">${n[2]}</span>${bd?`<span class="dot">${bd}</span>`:''}</button>`}).join('')}</div>`).join('')}<button class="colbtn" data-act="col" title="${S.col?'展开侧栏':'收起侧栏'}">${S.col?'»':'« 收起'}</button><div class="foot">原型演示 · 数据均为示例</div>`;$('#app').classList.toggle('col',!!S.col);$('#side').insertAdjacentHTML('beforeend',`<div class="demo"><button class="demobtn" data-act="demo" title="仅用于原型演示，真实产品里没有这个入口">${S.col?'⋯':'演示工具'}</button>${S.demoOpen?`<div class="pop"><div class="pop"><label>状态模拟（只影响详情页展示）<select class="sel" data-chg="sim">${[['','按真实数据'],['running','质控中'],['ok','质控完成 · 无问题'],['issues','质控完成 · 有问题'],['fail','质控失败'],['ignored','问题全部已忽略']].map(o=>`<option value="${o[0]}" ${S.sim===o[0]?'selected':''}>${o[1]}</option>`).join('')}</select></label>
  <label>回填原系统的结果<select class="sel" data-chg="backfill">${[['ok','成功'],['pacs','失败 · 原系统无响应'],['changed','失败 · 原系统内容已变化'],['nosupport','当前原系统不支持写入']].map(o=>`<option value="${o[0]}" ${S.backfill===o[0]?'selected':''}>${o[1]}</option>`).join('')}</select></label><button class="btn sm" data-act="reset">重置全部演示数据</button></div></div>`:''}</div>`);
- $('#top').innerHTML=`<h1>${TITLES[S.tab]}</h1><span class="sp"></span>
+ $('#top').innerHTML=`<h1>${pageTitle()}</h1><span class="sp"></span>
  <div class="seg">${['报告医生','审核医生','管理员'].map(r=>`<button class="${S.role===r?'on':''}" data-act="role" data-v="${r}">${r}</button>`).join('')}</div>
  `}
 function render(){
