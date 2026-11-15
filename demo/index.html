@@ -74,6 +74,19 @@ textarea{width:100%;min-height:96px;resize:vertical;line-height:1.7}
 .tbl th{background:var(--panel2);color:var(--muted);font-weight:600;text-align:left;padding:10px 14px;white-space:nowrap;position:sticky;top:0;border-bottom:1px solid var(--line);font-size:12.5px}
 .tbl td{padding:10px 14px;border-bottom:1px solid var(--line);white-space:nowrap;vertical-align:middle}
 .tbl tr:last-child td{border-bottom:0}
+.hfb{background:none;border:0;padding:3px;margin-left:3px;border-radius:5px;cursor:pointer;color:var(--muted);opacity:.6;line-height:0;vertical-align:-1px}
+.hfb:hover,.hfb.open{opacity:1;background:var(--gray-soft)}.hfb.on{color:var(--brand);opacity:1}
+.hfp{position:fixed;left:-999px;top:0;z-index:60;width:228px;max-width:calc(100vw - 16px);background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--sh2);padding:8px;font-size:13px;color:var(--fg)}
+.hfp>.inp{width:100%;margin-bottom:6px;padding:5px 10px}
+.hfl{max-height:228px;overflow:auto;display:flex;flex-direction:column;gap:1px}.hfe{padding:6px 8px}
+.hfo{display:flex;align-items:center;gap:8px;background:none;border:0;text-align:left;padding:6px 8px;border-radius:7px;cursor:pointer;width:100%}
+.hfo:hover{background:var(--panel2)}.hfo[hidden]{display:none}
+.hfo .ck{width:14px;height:14px;border:1.5px solid var(--muted);border-radius:4px;flex:none;display:grid;place-items:center;opacity:.8}
+.hfo.on .ck{background:var(--brand);border-color:var(--brand);opacity:1}
+.hfo.on .ck::after{content:'';width:7px;height:4px;border:solid #fff;border-width:0 0 2px 2px;transform:translateY(-1px) rotate(-45deg)}
+.hfo .ck.r{border-radius:50%}.hfo.on .ck.r{background:none}.hfo.on .ck.r::after{width:6px;height:6px;border:0;border-radius:50%;background:var(--brand);transform:none}
+.hfd{display:flex;flex-direction:column;gap:6px;padding:6px 8px 2px}.hfd label{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px}.hfd .inp{flex:1;padding:4px 8px}
+.hff{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);margin-top:6px;padding:6px 0 0 8px}
 .tbl tr.rw{cursor:pointer}.tbl tr.rw:hover td{background:var(--panel2)}.tbl tr.sel td{background:var(--brand-soft)}
 .kv{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px 18px}
 .kv div{display:flex;flex-direction:column;font-size:12px;color:var(--muted)}.kv b{font-size:14px;color:var(--fg);font-weight:600}
@@ -118,7 +131,7 @@ mark.hl sup{font-size:10px;font-weight:700;color:var(--hl-b);margin-left:1px}
 .sub button{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:4px 14px;cursor:pointer}.sub button.on{background:var(--brand);color:#fff;border-color:var(--brand)}
 /* 悬浮窗 */
 #widget{position:fixed;right:max(18px,env(safe-area-inset-right,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:40;font-size:13.5px}
-.pill{width:268px;background:var(--wbg);color:#fff;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:7px 14px 7px 8px;cursor:pointer;box-shadow:var(--sh2);display:flex;gap:8px;align-items:center}
+.pill{width:268px;background:var(--wbg);color:#fff;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:7px 8px;cursor:pointer;box-shadow:var(--sh2);display:flex;gap:8px;align-items:center}
 .pid{font-weight:700;background:var(--brand);color:#fff;border-radius:999px;padding:0 9px;font-size:12px;line-height:20px;white-space:nowrap}
 .wb{display:inline-grid;place-items:center;min-width:20px;height:20px;border-radius:999px;font-size:11.5px;font-weight:700;color:#fff;padding:0 6px;flex:none}
 .w-err{background:#f08a24}.w-ok{background:#1fa971}.w-fail{background:#e2474f}.w-run{background:#3b82f6;padding:0;width:20px;position:relative}
@@ -251,7 +264,7 @@ function seed(){
   imp:{text:'经阴道彩超,妇科\n心脏彩超,心脏\n浅表器官联合检查,乳腺、甲状腺\n甲状腺超声,甲状腺\n小器官超声,血管X',res:null},
   cap:{win:{title:'报告书写',proc:'RIS.exe',cls:'RisMainWnd',handle:'0x1A2B',state:'已匹配'},methods:[{k:'ctl',n:'控件读取',on:true},{k:'ocr',n:'OCR 读取',on:true},{k:'web',n:'Web 读取',on:false}],mode:'ctl',ctl:{},ocr:{},hk:'Ctrl+Alt+Q',hkRec:false,timeout:30,dirty:false},
   caplog:[{time:'11-10 09:05',who:'管理员',note:'采集配置：新增目标窗口“影像工作站”'}],rq:'lex',recs:'pub',
-  widget:'ticker',menu:false,wx:null,wy:null,busy:false,wmsg:'',guide:true,filt:{q:'',part:'全部',st:'全部',tk:'全部'},sel:null,
+  widget:'ticker',menu:false,wx:null,wy:null,busy:false,wmsg:'',guide:true,filt:{q:'',sex:'全部',parts:[],docs:[],time:{k:'',from:'',to:''},st:[],tk:[]},hf:null,hfq:'',sel:null,
   st:{range:'30',from:'',to:'',rank:'N',dir:-1,dim:'part',exp:{},mode:'n',dv:'bar',rr:'N',rd:-1},hdl:null,layer:null,misses:[],fills:[]};
  const reps=[
  ['US-DEMO-001','0012345678','张某某','女',52,['甲状腺'],'甲状腺及颈部淋巴结超声','张医生','2026-11-14 09:30','OCR','甲状腺左叶见单发低回声结节，内部回声回声不均匀，大小3.2×2.1。双侧颈部未见明显肿大淋巴结。','甲状腺右叶结节，TI-RADS 3类，建议随访。','完成'],
@@ -330,29 +343,63 @@ function render(){
  renderChrome();
  const v=$('#view');let h;
  if(S.tab==='list')h=renderList();else if(S.tab==='detail')h=renderDetail();else if(S.tab==='appeal')h=renderAppeal();else if(S.tab==='stats')h=renderStats();else h=renderSettings();
- v.innerHTML=h;$('#layer').innerHTML=renderLayer();renderWidget()}
+ v.innerHTML=h;placeHf();$('#layer').innerHTML=renderLayer();renderWidget()}
 function softRender(){const a=document.activeElement;if(a&&(a.tagName==='TEXTAREA'||a.tagName==='INPUT')&&a.closest('#view,#layer')){renderWidget();return}render()}
 /* ---------- 报告列表 ---------- */
 function renderList(){
  if(S.role==='报告医生')S.sub='qc';
  return (S.sub==='ap'?renderAppeal():renderQC())}
-function filteredRows(){const f=S.filt;const q=f.q.trim().toLowerCase();
- return visibleReps().filter(r=>(!q||[r.id,r.name,r.pid].some(x=>x.toLowerCase().includes(q)))&&(f.part==='全部'||r.parts.includes(f.part))&&(f.st==='全部'||statusOf(r)===f.st)&&(f.tk==='全部'||(f.tk==='有待处理'?pendN(ticketsFor(r))>0:f.tk==='已处理完'?(ticketsFor(r)&&!pendN(ticketsFor(r))):!ticketsFor(r))))}
+const HF={sex:'性别',part:'检查部位',doc:'报告医生',time:'报告时间',st:'质控状态',tk:'申诉'};
+const HF_ICON='<svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M1.5 2.5h13l-5 6v5l-3 1.5v-6.5z"/></svg>';
+const tkOf=r=>{const t=ticketsFor(r);return !t?'无申诉':pendN(t)?'申诉中':'已处理'};
+const dayN=d=>Date.parse(d+'T00:00:00');
+const hfKeys=()=>Object.keys(HF).filter(k=>k!=='doc'||S.role!=='报告医生');
+function hfOn(k){const f=S.filt;return k==='sex'?f.sex!=='全部':k==='time'?!!f.time.k:k==='part'?f.parts.length>0:k==='doc'?f.docs.length>0:f[k].length>0}
+function inTime(t){const T=S.filt.time,d=t.slice(0,10);if(T.k==='custom')return(!T.from||d>=T.from)&&(!T.to||d<=T.to);
+ const n={today:1,'7':7,'30':30}[T.k];return d<=TODAY&&(dayN(TODAY)-dayN(d))/864e5<n}
+function filteredRows(){const f=S.filt;const q=f.q.trim().toLowerCase();const num=/^\d+$/.test(q)?+q:null;const ks=hfKeys();
+ return visibleReps().filter(r=>{
+  if(q){const run=latestRun(latestVer(latestRec(r)));const pc=run.status==='完成'?active(run).length:null;
+   if(!([r.id,r.name].some(x=>x.toLowerCase().includes(q))||(num!==null&&((r.age&&r.age===num)||pc===num))))return false}
+  if(f.sex!=='全部'&&r.sex!==f.sex)return false;
+  if(f.parts.length&&!r.parts.some(p=>f.parts.includes(p)))return false;
+  if(ks.includes('doc')&&f.docs.length&&!f.docs.includes(r.owner))return false;
+  if(f.time.k&&!inTime(r.time))return false;
+  if(f.st.length&&!f.st.includes(statusOf(r)))return false;
+  if(f.tk.length&&!f.tk.includes(tkOf(r)))return false;
+  return true})}
+const hfTh=k=>`<th>${HF[k]}<button class="hfb${hfOn(k)?' on':''}${S.hf===k?' open':''}" data-act="hf" data-v="${k}" aria-label="筛选${HF[k]}" title="筛选${HF[k]}">${HF_ICON}</button></th>`;
+function hfPop(){const k=S.hf,f=S.filt;if(!k||!hfKeys().includes(k))return'';
+ const opt=(act,v,on,radio)=>`<button class="hfo${on?' on':''}" data-act="${act}" data-v="${k}" data-n="${esc(v)}"><i class="ck${radio?' r':''}"></i>${esc(v)}</button>`;
+ let body='';
+ if(k==='sex')body=`<div class="hfl">${['全部','男','女'].map(v=>opt('hfsex',v,f.sex===v,1)).join('')}</div>`;
+ else if(k==='part'||k==='doc'){const arr=k==='part'?f.parts:f.docs;const all=k==='part'?PN:[...new Set(visibleReps().map(r=>r.owner))];
+  body=`<input class="inp" placeholder="搜索${HF[k]}" value="${esc(S.hfq)}" data-in="hfq"><div class="hfl">${all.map(v=>opt('hfpick',v,arr.includes(v))).join('')}<div class="hfe muted small" hidden>无匹配项</div></div>`}
+ else if(k==='time')body=`<div class="hfl">${[['today','今天'],['7','近 7 天'],['30','近 30 天']].map(([v,l])=>`<button class="hfo${f.time.k===v?' on':''}" data-act="hftime" data-v="${v}"><i class="ck r"></i>${l}</button>`).join('')}
+  <button class="hfo${f.time.k==='custom'?' on':''}" data-act="hftime" data-v="custom"><i class="ck r"></i>自定义</button></div>
+  <div class="hfd"><label>开始<input class="inp" type="date" value="${f.time.from}" max="${TODAY}" data-chg="hft1"></label><label>结束<input class="inp" type="date" value="${f.time.to}" max="${TODAY}" data-chg="hft2"></label></div>`;
+ else body=`<div class="hfl">${(k==='st'?['质控中','质控完成','质控失败']:['无申诉','申诉中','已处理']).map(v=>opt('hfpick',v,f[k].includes(v))).join('')}</div>`;
+ return `<div class="hfp" id="hfp" role="dialog" aria-label="筛选${HF[k]}">${body}<div class="hff"><span class="muted small">${HF[k]}</span><button class="link" data-act="hfclr" data-v="${k}" ${hfOn(k)?'':'disabled'}>清除</button></div></div>`}
+function hfFilterOpts(){const p=$('#hfp');if(!p)return;const q=S.hfq.trim().toLowerCase();let n=0;
+ p.querySelectorAll('.hfo[data-n]').forEach(b=>{const hit=!q||b.dataset.n.toLowerCase().includes(q);b.hidden=!hit;if(hit)n++});const e=p.querySelector('.hfe');if(e)e.hidden=n>0}
+function placeHf(){const p=$('#hfp'),b=S.hf&&document.querySelector(`.hfb[data-v="${S.hf}"]`);if(!p||!b)return;const r=b.getBoundingClientRect();
+ const w=p.offsetWidth,h=p.offsetHeight;let top=r.bottom+6;if(top+h>innerHeight-8)top=Math.max(8,r.top-h-6);
+ p.style.left=Math.max(8,Math.min(r.left-8,innerWidth-w-8))+'px';p.style.top=top+'px';hfFilterOpts()}
+addEventListener('resize',placeHf);addEventListener('scroll',placeHf,true);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&S.hf){S.hf=null;render()}});
 function renderQC(){
  const f=S.filt;let rows=filteredRows();
  const guide=S.guide?`<div class="banner b-info" style="align-items:flex-start"><div><b>试用指引</b><ol class="steps" style="margin-top:2px"><li>右上角切换角色：报告医生 / 审核医生 / 管理员，看到的内容不同。</li><li>右下角悬浮窗模拟医生在工作站里的操作：点“手动质控”，结果会自动弹出。</li><li>双击任意一行进入质控详情；点正文高亮或右侧问题卡，两边联动定位。</li><li>在详情里对问题“申诉”，切到审核医生处理，回到列表看申诉列实时变化。</li><li>管理员在“设置”里配置质控词库、部位对应、采集配置。</li></ol></div><button class="x" style="position:static;margin-left:auto" data-act="guideX">×</button></div>`:'';
- return guide+`<div class="card"><div class="row" style="margin-bottom:14px"><input class="inp" style="width:230px" placeholder="检查标识 / 姓名 / 病历号" value="${esc(f.q)}" data-chg="fq">
- <select class="sel" data-chg="fpart"><option value="全部">检查部位：全部</option>${PN.map(p=>`<option ${f.part===p?'selected':''}>${p}</option>`).join('')}</select>
- <select class="sel" data-chg="fst">${['全部','质控中','质控完成','质控失败'].map(o=>`<option value="${o}" ${f.st===o?'selected':''}>${o==='全部'?'质控状态：全部':o}</option>`).join('')}</select>
- <select class="sel" data-chg="ftk">${['全部','有待处理','已处理完','无申诉'].map(o=>`<option value="${o}" ${f.tk===o?'selected':''}>${o==='全部'?'申诉：全部':'申诉：'+o}</option>`).join('')}</select>
+ return guide+`<div class="card"><div class="row" style="margin-bottom:14px"><input class="inp" style="width:260px" placeholder="检查标识 / 姓名 / 年龄 / 问题数" value="${esc(f.q)}" data-chg="fq">
+ ${(()=>{const n=hfKeys().filter(hfOn).length;return n?`<span class="small">已筛选 ${n} 项 · <button class="link" style="padding:2px 0" data-act="hfclrall">清除全部</button></span>`:''})()}
  <span class="muted small" style="margin-left:auto">共 ${rows.length} 份报告 · 每份报告一行</span></div>
- <div class="tw"><table class="tbl"><thead><tr><th>检查标识</th><th>姓名</th><th>性别</th><th>年龄</th><th>检查部位</th><th>报告医生</th><th>报告时间</th><th>质控状态</th><th>问题数</th><th>申诉</th><th>操作</th></tr></thead><tbody>
+ <div class="tw"><table class="tbl"><thead><tr><th>检查标识</th><th>姓名</th>${hfTh('sex')}<th>年龄</th>${hfTh('part')}${S.role==='报告医生'?'<th>报告医生</th>':hfTh('doc')}${hfTh('time')}${hfTh('st')}<th>问题数</th>${hfTh('tk')}<th>操作</th></tr></thead><tbody>
  ${rows.map(r=>{const run=latestRun(latestVer(latestRec(r))),st=statusOf(r),t=ticketsFor(r),pn=pendN(t),n=active(run).length;
  return `<tr class="rw" data-dbl="${r.id}"><td><b>${r.id}</b></td><td>${esc(S.role==='报告医生'||S.role==='审核医生'||S.role==='管理员'?r.name:'')}</td><td>${r.sex}</td><td class="n">${r.age||'—'}</td><td>${r.parts.join('、')}</td><td>${r.owner}</td><td class="n">${r.time.slice(5)}</td>
  <td><span class="chip ${stChip(st)}">${st}</span></td><td class="n">${run.status==='完成'?(n?`<b class="bad">${n}</b>`:'0'):'—'}</td>
  <td>${t?(pn?`<span class="chip c-pur">${isRev()?'待处理 ':'申诉中 '}${pn}</span>`:'<span class="chip c-gray nd">已处理</span>'):'—'}</td>
  <td><button class="link" data-act="open" data-id="${r.id}">查看</button>${r.owner===myName()&&S.role!=='管理员'?`<button class="link" data-act="recheckRow" data-id="${r.id}">复检</button>`:''}</td></tr>`}).join('')||`<tr><td colspan="11" class="muted" style="padding:34px;text-align:center">没有符合条件的报告</td></tr>`}</tbody></table></div>
- <p class="muted small" style="margin:12px 0 0">列表只放“要不要处理”的信息；报告记录、版本、质控记录等细节，请在质控详情里查看。</p></div>`}
+ <p class="muted small" style="margin:12px 0 0">列表只放“要不要处理”的信息；报告记录、版本、质控记录等细节，请在质控详情里查看。</p></div>${hfPop()}`}
 /* ---------- 申诉列表 / 处理 ---------- */
 function renderAppeal(){
  const ts=myTickets();
@@ -459,7 +506,7 @@ function renderWidget(){const w=$('#widget');const rep=wrep();if(!rep){w.innerHT
  if(run.status==='质控中')txt='质控中…';else if(run.status==='失败')txt='质控失败，可重试';else if(!list.length)txt='未发现问题';else{kind='run';txt=list.map(pd).join('　·　')}
  const badge=run.status==='完成'?(list.length?`<span class="wb w-err" title="发现 ${list.length} 个问题">${list.length}</span>`:`<span class="wb w-ok" title="完成，未发现问题">✓</span>`):run.status==='失败'?`<span class="wb w-fail" title="质控失败">!</span>`:`<span class="wb w-run" title="质控中"></span>`;
  const stc=run.status==='完成'?(list.length?['','发现问题']:['','未发现问题']):run.status==='失败'?['','质控失败']:['','质控中'];
- if(S.widget==='ticker'){w.innerHTML=`<button class="pill" data-act="wlist" aria-label="展开问题列表"><span class="pid">${rep.id.slice(-3)}</span>${badge}<span class="mq"><span class="mi ${kind}" ${kind==='run'?`style="animation-duration:${Math.max(9,Math.round(txt.length*.32))}s"`:''}>${esc(txt)}</span></span></button>`;return}
+ if(S.widget==='ticker'){w.innerHTML=`<button class="pill" data-act="wlist" aria-label="展开问题列表"><span class="pid">${rep.id.slice(-3)}</span><span class="mq"><span class="mi ${kind}" ${kind==='run'?`style="animation-duration:${Math.max(9,Math.round(txt.length*.32))}s"`:''}>${esc(txt)}</span></span>${badge}</button>`;return}
  if(S.widget==='list'){w.innerHTML=`<div class="wl"><div class="row"><span class="pid">${rep.id}</span>${badge}<b style="font-weight:600">${esc(rep.name)}</b><button class="link wlk" style="margin-left:auto" data-act="wpanel">展开</button><button class="link wlk" data-act="wtick">﹀</button></div>
   ${list.map((p,i)=>`<div>${i+1}. ${esc(pd(p))}</div>`).join('')||`<div>${txt}</div>`}${tp?`<div style="color:#d9c8ff">有 ${tp} 条申诉${isRev()?'待处理':'审核中'}</div>`:''}</div>`;return}
  const sc=[['ctl','控件读取 · 内容未变（只新增质控记录）'],['mod','控件读取 · 内容已修改（新增版本）'],['ocr','OCR 读取 · 内容已修改（新增版本，存原图）'],['multi','找到多个窗口'],['nowin','窗口未找到'],['off','断网'],['perm','权限不足'],['timeout','质控超过 30 秒'],['manual','手工录入']];
@@ -710,12 +757,12 @@ document.addEventListener('input',e=>{const t=e.target,k=t.dataset.in;if(!k)retu
  if(k==='findings'||k==='diagnosis'){S.draft[k]=v;const b=document.querySelector('[data-act=fillAsk]');if(b)b.disabled=!editCount()}
  else if(k==='lr'||k==='lm')L.reason=v;else if(k==='lmw')L.word=v;else if(k==='law')L.word=v;else if(k==='lar')L.reason=v;
  else if(k==='fw')S.f.word=v;else if(k==='ft')S.f.tip=v;else if(k==='rn')S.rn[t.dataset.id]=v;else if(k==='mn')S.mf.name=v;else if(k==='imptext'){S.imp.text=v;S.imp.res=null}
- else if(k==='rfw')S.rf.word=v;else if(k==='rft')S.rf.tip=v;else if(k==='rfy')S.rf.reason=v});
+ else if(k==='hfq'){S.hfq=v;hfFilterOpts();return}else if(k==='rfw')S.rf.word=v;else if(k==='rft')S.rf.tip=v;else if(k==='rfy')S.rf.reason=v});
 document.addEventListener('change',e=>{const el=e.target,k=el.dataset.chg;if(!k)return;const v=el.type==='checkbox'?el.checked:el.value,c=S.cap,L=S.layer;
  if(k==='impfile'){const f=el.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{S.imp.text=String(r.result);S.imp.res=null;render()};r.readAsText(f);return}
  switch(k){
  case'sim':S.sim=v;break;case'backfill':S.backfill=v;break;
- case'fq':S.filt.q=v;break;case'fpart':S.filt.part=v;break;case'fst':S.filt.st=v;break;case'ftk':S.filt.tk=v;break;
+ case'fq':S.filt.q=v;break;case'hft1':S.filt.time.from=v;S.filt.time.k='custom';break;case'hft2':S.filt.time.to=v;S.filt.time.k='custom';break;
  case'cmpA':L.a=v;break;case'cmpB':L.b=v;break;case'cmpOnly':L.only=v;break;case'hnote':S.hdl.dec[el.dataset.p].note=v;break;
  case'missBl':L.bl=v;break;case'lmr':L.rule=v;break;case'lascope':L.scope=v?el.value:L.scope;break;
  case'fr':S.f.rule=v;break;case'rfr':S.rf.rule=v;break;
@@ -730,9 +777,16 @@ const _render=render;render=function(){_render();fixInd()};
 const toggle=(arr,n)=>{const j=arr.indexOf(n);if(j>=0)arr.splice(j,1);else arr.push(n)};
 document.addEventListener('click',e=>{
  if(S.demoOpen&&!e.target.closest('.demo')){S.demoOpen=false;render()}
+ if(S.hf&&!e.target.closest('#hfp,.hfb')){S.hf=null;render()}
  const el=e.target.closest('[data-act]');if(!el)return;if(el.disabled)return;const a=el.dataset.act,v=el.dataset.v,id=el.dataset.id,pid=el.dataset.p,i=+el.dataset.i,n=el.dataset.n,c=S.cap;
  const x=['selp','open','tab','go','role','demo','reset'].includes(a)?null:ctx();
  switch(a){
+ case'hf':S.hf=S.hf===v?null:v;S.hfq='';break;
+ case'hfsex':S.filt.sex=n;break;
+ case'hfpick':{const arr=v==='part'?S.filt.parts:v==='doc'?S.filt.docs:S.filt[v];const j=arr.indexOf(n);if(j<0)arr.push(n);else arr.splice(j,1);break}
+ case'hftime':{const T=S.filt.time;if(T.k===v)T.k='';else{T.k=v;if(v==='custom'&&!T.from){T.from='2026-11-01';T.to=TODAY}}break}
+ case'hfclr':{const f=S.filt;if(v==='sex')f.sex='全部';else if(v==='time')f.time={k:'',from:'',to:''};else if(v==='part')f.parts=[];else if(v==='doc')f.docs=[];else f[v]=[];break}
+ case'hfclrall':{const f=S.filt;Object.assign(f,{sex:'全部',parts:[],docs:[],time:{k:'',from:'',to:''},st:[],tk:[]});S.hf=null;break}
  case'tab':S.tab=v;S.layer=null;S.hdl=null;S.demoOpen=false;break;
  case'role':S.role=v;S.tab='list';S.sub='qc';S.layer=null;S.hdl=null;S.aset=null;S.editing=false;S.demoOpen=false;break;
  case'go':{const [t,x]=v.split(':');S.tab=t;S.layer=null;S.hdl=null;S.demoOpen=false;if(t==='list')S.sub=x||'qc';if(t==='settings')S.aset=x;break}
@@ -823,7 +877,7 @@ document.addEventListener('click',e=>{
  case'hkrec':c.hkRec=true;break;
  case'capsave':{S.caplog.push({time:nowF(),who:'管理员',note:'采集配置保存：读取方式 '+c.methods.filter(q=>q.on).map(q=>q.n).join(' → ')+'；快捷键 '+c.hk+'；超时 '+c.timeout+' 秒'});c.dirty=false;toast('已保存采集配置，之后的采集按新配置执行');break}
  case'strange':S.st.range=v;if(v==='custom'&&!S.st.from){S.st.from='2026-11-01';S.st.to='2026-11-14'}break;
- case'ssort':if(S.st.rank===v)S.st.dir*=-1;else{S.st.rank=v;S.st.dir=-1}break;case'sdim':S.st.dim=v;break;case'smode':S.st.mode=v;break;case'sdv':S.st.dv=v;break;case'sexp':S.st.exp[v]=!S.st.exp[v];break;case'rsort':if(S.st.rr===v)S.st.rd*=-1;else{S.st.rr=v;S.st.rd=-1}break;case'stfail':S.tab='list';S.sub='qc';S.filt.st='质控失败';break;
+ case'ssort':if(S.st.rank===v)S.st.dir*=-1;else{S.st.rank=v;S.st.dir=-1}break;case'sdim':S.st.dim=v;break;case'smode':S.st.mode=v;break;case'sdv':S.st.dv=v;break;case'sexp':S.st.exp[v]=!S.st.exp[v];break;case'rsort':if(S.st.rr===v)S.st.rd*=-1;else{S.st.rr=v;S.st.rd=-1}break;case'stfail':S.tab='list';S.sub='qc';S.filt.st=['质控失败'];break;
  case'wlist':S.widget='list';break;case'wpanel':S.widget='panel';break;case'wtick':S.widget='ticker';S.menu=false;break;case'menu':S.menu=!S.menu;break;
  case'manualQC':manualQC();return;
  case'retryQC':S.layer=null;manualQC();return;
