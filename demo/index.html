@@ -545,7 +545,7 @@ function placeHf(){const p=$('#hfp'),b=S.hf&&document.querySelector(`.hfb[data-v
  const w=p.offsetWidth,h=p.offsetHeight;let top=r.bottom+6;if(top+h>innerHeight-8)top=Math.max(8,r.top-h-6);
  p.style.left=Math.max(8,Math.min(r.left-8,innerWidth-w-8))+'px';p.style.top=top+'px';hfFilterOpts()}
 addEventListener('resize',placeHf);addEventListener('scroll',placeHf,true);
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&S.hf){S.hf=null;render()}});
+document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(S.hf){S.hf=null;render()}else if(S.menu){S.menu=false;renderWidget()}});
 function renderQC(){
  const f=S.filt;const all=filteredRows(),P=pageOf('qc',all,JSON.stringify(S.filt)+S.role);let rows=P.rows;
  const guide=S.guide?`<div class="banner b-info" style="align-items:flex-start"><div><b>试用指引</b><ol class="steps" style="margin-top:2px"><li>右上角切换角色：报告医生 / 审核医生 / 管理员，看到的内容不同。</li><li>右下角悬浮窗模拟医生在工作站里的操作：点“手动质控”，结果会自动弹出。</li><li>双击任意一行进入质控详情；点正文高亮或右侧问题卡，两边联动定位。</li><li>在详情里对问题“申诉”，切到审核医生处理，回到列表看申诉列实时变化。</li><li>管理员在“设置”里配置质控词库、部位对应、采集配置。</li></ol></div><button class="x" style="position:static;margin-left:auto" data-act="guideX">×</button></div>`:'';
@@ -664,7 +664,7 @@ function renderWidget(){const w=$('#widget');const rep=wrep();if(!rep){w.innerHT
  const badge=run.status==='完成'?(list.length?`<span class="wb w-err" title="发现 ${list.length} 个问题">${list.length}</span>`:`<span class="wb w-ok" title="完成，未发现问题">✓</span>`):run.status==='失败'?`<span class="wb w-fail" title="质控失败">!</span>`:`<span class="wb w-run" title="质控中"></span>`;
  const stc=run.status==='完成'?(list.length?['','发现问题']:['','未发现问题']):run.status==='失败'?['','质控失败']:['','质控中'];
  if(S.widget==='ticker'){w.innerHTML=`<div class="pillw"><button class="pill" data-act="wlist" aria-label="展开问题列表"><span class="pid">${rep.id.slice(-3)}</span><span class="mq"><span class="mi ${kind}" ${kind==='run'?`style="animation-duration:${Math.max(9,Math.round(txt.length*.32))}s"`:''}>${esc(txt)}</span></span>${badge}</button><button class="wqc ic" ${S.busy?'disabled':''} data-act="manualQC" title="手动质控" aria-label="手动质控">${S.busy?'<span class="spin"></span>':'<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9"/><path d="M13.5 2.5v3h-3"/></svg>'}</button></div>`;return}
- if(S.widget==='list'){w.innerHTML=`<div class="wl"><div class="row"><span class="pid">${rep.id}</span>${badge}<b style="font-weight:600">${esc(rep.name)}</b><button class="link wlk" style="margin-left:auto" data-act="wpanel">展开</button><button class="link wlk" data-act="wtick">﹀</button></div>
+ if(S.widget==='list'){w.innerHTML=`<div class="wl"><div class="row"><span class="pid">${rep.id}</span>${badge}<b style="font-weight:600">${esc(rep.name)}</b><button class="link wlk" style="margin-left:auto" data-act="wdetail" data-id="${rep.id}">详情</button><button class="link wlk" data-act="wtick">﹀</button></div>
   ${list.map((p,i)=>`<div>${i+1}. ${esc(pd(p))}</div>`).join('')||`<div>${txt}</div>`}${tp?`<div style="color:#d9c8ff">有 ${tp} 条申诉${isRev()?'待处理':'审核中'}</div>`:''}<button class="wqc" style="width:100%;height:32px;margin-top:8px;box-shadow:none" ${S.busy?'disabled':''} data-act="manualQC">${S.busy?'<span class="spin"></span> 质控中…':'手动质控'}</button></div>`;return}
  const sc=[['ctl','句柄读取 · 内容未变（只新增质控记录）'],['mod','句柄读取 · 内容已修改（新增版本）'],['ocr','OCR 读取 · 内容已修改（新增版本，存原图）'],['multi','找到多个窗口'],['nowin','窗口未找到'],['off','断网'],['perm','权限不足'],['timeout','质控超过 30 秒'],['manual','手工录入']];
  const mn=S.menu?`<div class="menu"><div class="small muted" style="padding:4px 10px">演示：模拟不同的采集 / 质控结果</div>${sc.map(s=>`<button data-act="cap" data-v="${s[0]}">${s[1]}</button>`).join('')}</div>`:'';
@@ -940,6 +940,7 @@ const toggle=(arr,n)=>{const j=arr.indexOf(n);if(j>=0)arr.splice(j,1);else arr.p
 document.addEventListener('click',e=>{
  if(S.demoOpen&&!e.target.closest('.demo')){S.demoOpen=false;render()}
  if(S.hf&&!e.target.closest('#hfp,.hfb')){S.hf=null;render()}
+ if(S.menu&&!e.target.closest('#widget .menu,[data-act=menu]')){S.menu=false;renderWidget()}
  const el=e.target.closest('[data-act]');if(!el)return;if(el.disabled)return;const a=el.dataset.act,v=el.dataset.v,id=el.dataset.id,pid=el.dataset.p,i=+el.dataset.i,n=el.dataset.n,c=S.cap;
  const x=['selp','open','tab','go','role','demo','reset'].includes(a)?null:ctx();
  switch(a){
@@ -962,7 +963,7 @@ document.addEventListener('click',e=>{
  case'runsT':S.runsOpen=!S.runsOpen;break;
  case'guideX':S.guide=false;break;case'aset':S.aset=v;break;case'rec':S.recs=v;break;
  case'reset':{const r=S.role;const g=S.guide;seed();S.role=r;S.guide=g;break}
- case'open':openDetail(id);break;
+ case'open':openDetail(id);break;case'wdetail':S.widget='ticker';S.menu=false;openDetail(id);break;
  case'recheckRow':{const rep=R_(id);recheck(rep,rep.records.length-1);toast('已发起复检，新增一条质控记录');break}
  case'selp':S.sel=S.sel===pid?null:pid;break;
  case'setri':S.ri=+v;S.vi=null;S.runi=null;S.editing=false;break;
@@ -1045,7 +1046,7 @@ document.addEventListener('click',e=>{
  case'wlist':S.widget='list';break;case'wpanel':S.widget='panel';break;case'wtick':S.widget='ticker';S.menu=false;break;case'menu':S.menu=!S.menu;break;
  case'manualQC':manualQC();return;
  case'retryQC':S.layer=null;manualQC();return;
- case'cap':capture(v,true);return;
+ case'cap':capture(v,true);render();return;
  case'multiGo':{const r=document.querySelector('input[name=mw]:checked');S.layer=null;if(r){S.cur=r.value;const rep=cur();S.ri=rep.records.length-1;S.busy=true;recheck(rep,S.ri,'手动质控');latestRun(latestVer(latestRec(rep))).popup=true;toast('已选择窗口 '+r.value+' 并开始质控')}break}
  case'manualGo':{const id2=$('#mId').value.trim(),f=$('#mF').value.trim(),d=$('#mD').value.trim();if(!id2||!f||!d){toast('请填写检查标识、所见和诊断');return}if(S.reps.some(q=>q.id===id2)){toast('检查标识已存在');return}
   newReport({id:id2,pid:'00'+Math.floor(Math.random()*1e8),name:$('#mName').value.trim()||'未填',owner:myName(),parts:[$('#mPart').value],exam:$('#mPart').value+'超声',sex:$('#mSex').value,age:parseInt($('#mAge').value)||0,findings:f,diagnosis:d,source:'手工'});S.layer=null;S.cur=id2;toast('已录入并开始质控');break}
