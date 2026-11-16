@@ -90,7 +90,7 @@ textarea{width:100%;min-height:96px;resize:vertical;line-height:1.7}
 .lexhint{display:flex;flex-wrap:wrap;align-items:center;gap:2px 6px;margin-top:6px;font-size:12.5px;line-height:1.5}.lexhint.is-bad{color:var(--bad)}.lexhint.is-warn{color:var(--warn)}.lexhint .link{padding:0}
 .tbl tr.lexhi td{background:var(--warn-soft)!important;transition:background .3s}
 .drange{display:inline-flex;align-items:center;gap:6px}.drange .inp{padding:5px 8px}
-.demosim{display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--muted)}.demosim em{font-style:normal}
+.demonote{font-style:normal;font-size:11.5px}
 .pager{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:14px}.pager .sp{flex:1}
 .pgb{min-width:32px;height:32px;padding:0 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel);cursor:pointer;font-variant-numeric:tabular-nums}
 .pgb:hover:not(:disabled){border-color:var(--brand)}.pgb.on{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:600}.pgb:disabled{opacity:.4;cursor:default}
@@ -463,7 +463,7 @@ function pageTitle(){if(S.tab==='detail')return TITLES.detail;const it=navTree()
  return ({'部位对应':'部位对应设置','质控词库':'质控词库设置'})[it[2]]||it[2]}
 function renderChrome(){
  $('#side').innerHTML=`<div class="logo"><i>✓</i><b>超声报告质控</b></div>${navTree().map(g=>`<div class="ng"><div class="nh">${g[0]}</div>${g[2].map(n=>{const bd=navBadge(n[0],n[1]);return `<button class="nv ${navOn(n[0],n[1])?'on':''}" data-act="go" data-v="${n[0]}:${n[1]}" title="${n[2]}"><span class="ic">${n[3]}</span><span class="tx">${n[2]}</span>${bd?`<span class="dot">${bd}</span>`:''}</button>`}).join('')}</div>`).join('')}<button class="colbtn" data-act="col" title="${S.col?'展开侧栏':'收起侧栏'}">${S.col?'»':'« 收起'}</button><div class="foot">原型演示 · 数据均为示例</div>`;$('#app').classList.toggle('col',!!S.col);$('#side').insertAdjacentHTML('beforeend',`<div class="demo"><button class="demobtn" data-act="demo" title="仅用于原型演示，真实产品里没有这个入口">${S.col?'⋯':'演示工具'}</button>${S.demoOpen?`<div class="pop"><div class="pop"><label>状态模拟（只影响详情页展示）<select class="sel" data-chg="sim">${[['','按真实数据'],['running','质控中'],['ok','质控完成 · 无问题'],['issues','质控完成 · 有问题'],['fail','质控失败'],['ignored','问题全部已忽略']].map(o=>`<option value="${o[0]}" ${S.sim===o[0]?'selected':''}>${o[1]}</option>`).join('')}</select></label>
- <label>回填原系统的结果<select class="sel" data-chg="backfill">${[['ok','成功'],['pacs','失败 · 原系统无响应'],['changed','失败 · 原系统内容已变化'],['nosupport','当前原系统不支持写入']].map(o=>`<option value="${o[0]}" ${S.backfill===o[0]?'selected':''}>${o[1]}</option>`).join('')}</select></label><div class="demosim"><span>悬浮窗采集模拟</span>${wrep()?`<div class="row" style="gap:6px">${[['nowin','未找到窗口'],['off','断网'],['perm','权限不足'],['multi','找到多个窗口']].map(o=>`<button class="btn sm" data-act="demoCap" data-v="${o[0]}">${o[1]}</button>`).join('')}</div>`:'<em>管理员没有悬浮窗，请切换到报告医生或审核医生</em>'}</div><button class="btn sm" data-act="reset">重置全部演示数据</button></div></div>`:''}</div>`);
+ <label>回填原系统的结果<select class="sel" data-chg="backfill">${[['ok','成功'],['pacs','失败 · 原系统无响应'],['changed','失败 · 原系统内容已变化'],['nosupport','当前原系统不支持写入']].map(o=>`<option value="${o[0]}" ${S.backfill===o[0]?'selected':''}>${o[1]}</option>`).join('')}</select></label><label>悬浮窗手动质控的采集结果<select class="sel" data-chg="capsim" ${wrep()?'':'disabled'}>${[['','正常'],['nowin','未找到窗口'],['off','断网'],['perm','权限不足'],['multi','找到多个窗口']].map(o=>`<option value="${o[0]}" ${(S.capSim||'')===o[0]?'selected':''}>${o[1]}</option>`).join('')}</select>${wrep()?'':'<em class="demonote">管理员没有悬浮窗，请切换到报告医生或审核医生</em>'}</label><button class="btn sm" data-act="reset">重置全部演示数据</button></div></div>`:''}</div>`);
  $('#top').innerHTML=`<h1>${pageTitle()}</h1><span class="sp"></span>
  <div class="seg">${['报告医生','审核医生','管理员'].map(r=>`<button class="${S.role===r?'on':''}" data-act="role" data-v="${r}">${r}</button>`).join('')}</div>
  `}
@@ -700,7 +700,7 @@ function capture(kind,popup){const rep=wrep();S.menu=false;S.wmsg='';if(!rep)ret
  else if(kind==='multi'){S.layer={t:'multi'}}
  else if(kind==='manual'){S.layer={t:'manual'}}
  render()}
-function manualQC(){if(S.busy)return;const rep=wrep();if(!rep)return;S.wmsg='';capture(rep.changed?'mod':'ctl',true)}
+function manualQC(){if(S.busy)return;const rep=wrep();if(!rep)return;S.wmsg='';capture(S.capSim||(rep.changed?'mod':'ctl'),true)}
 /* ---------- 统计（示例数据：近 30 天） ---------- */
 const DOCS=['张医生','王医生','陈医生','赵医生','李医生','周医生'];
 let STATS=null;
@@ -943,7 +943,7 @@ document.addEventListener('input',e=>{const t=e.target,k=t.dataset.in;if(!k)retu
 document.addEventListener('change',e=>{const el=e.target,k=el.dataset.chg;if(!k)return;const v=el.type==='checkbox'?el.checked:el.value,c=S.cap,L=S.layer;
  if(k==='impfile'){const f=el.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{S.imp.text=String(r.result);S.imp.res=null;render()};r.readAsText(f);return}
  switch(k){
- case'sim':S.sim=v;break;case'backfill':S.backfill=v;break;
+ case'sim':S.sim=v;break;case'capsim':S.capSim=v;break;case'backfill':S.backfill=v;break;
  case'fq':curF().q=v;break;case'pgsize':{const g=S.pg[isAp()?'ap':'qc'];g.n=+v;g.p=1;break}case'hft1':case'hft2':{const T=hfVal(S.hf);T[k==='hft1'?'from':'to']=v;T.k='custom';break}
  case'cmpA':L.a=v;break;case'cmpB':L.b=v;break;case'cmpOnly':L.only=v;break;case'hnote':S.hdl.dec[el.dataset.p].note=v;break;
  case'missBl':L.bl=v;break;case'lmr':L.rule=v;break;case'lascope':L.scope=v?el.value:L.scope;break;
@@ -975,7 +975,7 @@ document.addEventListener('click',e=>{
  case'tab':S.tab=v;S.layer=null;S.hdl=null;S.demoOpen=false;break;
  case'role':S.role=v;S.tab='list';S.sub='qc';S.layer=null;S.hdl=null;S.aset=null;S.editing=false;S.demoOpen=false;break;
  case'go':{const [t,x]=v.split(':');S.tab=t;S.layer=null;S.hdl=null;S.demoOpen=false;if(t==='list')S.sub=x||'qc';if(t==='settings')S.aset=x;break}
- case'demo':S.demoOpen=!S.demoOpen;break;case'demoCap':S.demoOpen=false;capture(v,true);render();return;
+ case'demo':S.demoOpen=!S.demoOpen;break;
  case'col':S.col=!S.col;break;
  case'back':S.tab='list';S.sub=S.from==='ap'?'ap':'qc';S.layer=null;break;
  case'nav':{const ids=S.from==='ap'?myTickets().map(t=>t.rep):filteredRows().map(r=>r.id);const k=ids.indexOf(S.cur)+ +v;if(k>=0&&k<ids.length){S.from=S.from;openDetail(ids[k])}break}
