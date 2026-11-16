@@ -87,6 +87,8 @@ textarea{width:100%;min-height:96px;resize:vertical;line-height:1.7}
 .mf{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--muted);font-weight:500;min-width:0}.mf i{color:var(--bad);font-style:normal;margin-left:2px}
 .mf .inp,.mf .sel,.mf textarea{width:100%;color:var(--fg);font-weight:400}
 @media(max-width:640px){.mgrid{grid-template-columns:1fr 1fr}}
+.lexhint{display:flex;flex-wrap:wrap;align-items:center;gap:2px 6px;margin-top:6px;font-size:12.5px;line-height:1.5}.lexhint.is-bad{color:var(--bad)}.lexhint.is-warn{color:var(--warn)}.lexhint .link{padding:0}
+.tbl tr.lexhi td{background:var(--warn-soft)!important;transition:background .3s}
 .pager{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:14px}.pager .sp{flex:1}
 .pgb{min-width:32px;height:32px;padding:0 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel);cursor:pointer;font-variant-numeric:tabular-nums}
 .pgb:hover:not(:disabled){border-color:var(--brand)}.pgb.on{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:600}.pgb:disabled{opacity:.4;cursor:default}
@@ -833,6 +835,13 @@ function renderStats(){
  return flt+qc+er+dr+ha+rv}
 /* ---------- 设置 ---------- */
 const D=()=>S.draft||S.lex;
+/* 词库冲突：另一个名单里有同一个词——同扣分项且部位重叠为冲突（不能添加），否则仅提示 */
+function lexConflict(){const f=S.f,k=S.lexTab;if(k!=='wl'&&k!=='bl')return null;const w=(f.word||'').trim();if(!w)return null;const ok=k==='wl'?'bl':'wl';
+ const same=D()[ok].filter(q=>q.word===w);if(!same.length)return null;
+ const hard=same.find(q=>q.rule===f.rule&&(!q.parts.length||!f.parts.length||q.parts.some(p=>f.parts.includes(p))));return{hard:!!hard,q:hard||same[0],other:ok}}
+function lexHintHtml(){const c=lexConflict();if(!c)return'';const nm=c.other==='wl'?'白名单':'黑名单',q=c.q;
+ return `<div class="lexhint ${c.hard?'is-bad':'is-warn'}"><span>${c.hard?`与${nm}词条冲突，不能添加：`:`${nm}里已有同一个词：`}${esc(q.word)} · ${q.rule} · ${q.parts.length?q.parts.join('、'):'全部部位'}${c.hard?'':'（扣分项或部位不同，可以添加）'}</span><button class="link small" data-act="lexgo" data-v="${c.other}" data-id="${q.id}">查看</button></div>`}
+function lexHintUpdate(){const h=$('#lexHint');if(h)h.innerHTML=lexHintHtml();const b=document.querySelector('[data-act=ladd]');const c=lexConflict();if(b)b.disabled=!!(c&&c.hard)}
 function mut(){if(!S.draft)S.draft=clone(S.lex);S.previewed=false;return S.draft}
 function nChanges(){if(!S.draft)return 0;let n=0;['wl','bl'].forEach(k=>{const a=new Set(S.lex[k].map(x=>x.id)),b=new Set(S.draft[k].map(x=>x.id));S.lex[k].forEach(x=>{if(!b.has(x.id))n++});S.draft[k].forEach(x=>{if(!a.has(x.id))n++})});return n}
 const myName=()=>S.role==='审核医生'?'赵医生':'张医生';
@@ -859,12 +868,12 @@ function setLex(){const d=D(),k=S.lexTab;const pend=S.reqs.filter(r=>r.st==='待
  if(k==='rq')return `<div class="card">${tabs}${S.reqs.map(r=>`<div class="box" style="margin-bottom:10px"><div class="row"><span class="chip ${r.st==='待审核'?'c-warn':r.st==='已通过'?'c-ok':'c-bad'}">${r.st}</span><b>${r.type}：${esc(r.word)}</b><span class="muted small">绑定 ${r.rule} · ${r.parts.length?r.parts.join('、'):'全部部位'} · ${r.doctor} · ${r.time}</span></div>${r.tip?`<div class="small">提示文案：${esc(r.tip)}</div>`:''}<div class="small" style="margin:4px 0">理由：${esc(r.reason)}</div>${r.st==='待审核'?`<div class="row"><button class="btn g sm" data-act="rpass" data-id="${r.id}">通过并加入草稿</button><input class="inp" style="width:220px" placeholder="驳回须填写说明" data-in="rn" data-id="${r.id}" value="${esc(S.rn[r.id]||'')}"><button class="btn d sm" data-act="rrej" data-id="${r.id}">驳回</button></div>`:`<div class="small muted">${esc(r.note||'')}</div>`}</div>`).join('')}</div>`;
  const list=d[k],f=S.f,ptxt=p=>p.length?p.join('、'):'全部部位';
  return `<div class="grid2"><div class="card">${tabs}<p class="muted small">${k==='wl'?'白名单：命中的内容，不再被所绑定的扣分项标记。':'黑名单：命中的内容一定提示，算作所绑定扣分项的问题。'}精确匹配，不开放通配符。词条先进草稿，预览后发布。</p>
- <div class="tw"><table class="tbl wrap"><thead><tr><th>词 / 写法</th><th>绑定扣分项</th><th>适用部位</th>${k==='bl'?'<th>提示文案</th>':''}<th>来源</th><th>添加时间</th><th></th></tr></thead><tbody>${list.map((x,i)=>`<tr><td><b>${esc(x.word)}</b></td><td>${x.rule}</td><td style="white-space:normal;max-width:220px">${ptxt(x.parts)}</td>${k==='bl'?`<td>${esc(x.tip)}</td>`:''}<td class="nw">${esc(x.src)}</td><td class="n">${x.time}</td><td><button class="link" data-act="ldel" data-i="${i}">删除</button></td></tr>`).join('')||`<tr><td colspan="7" class="muted" style="padding:24px;text-align:center">暂无词条</td></tr>`}</tbody></table></div>
+ <div class="tw"><table class="tbl wrap"><thead><tr><th>词 / 写法</th><th>绑定扣分项</th><th>适用部位</th>${k==='bl'?'<th>提示文案</th>':''}<th>来源</th><th>添加时间</th><th></th></tr></thead><tbody>${list.map((x,i)=>`<tr data-lid="${x.id}" class="${S.lexHi===x.id?'lexhi':''}"><td><b>${esc(x.word)}</b></td><td>${x.rule}</td><td style="white-space:normal;max-width:220px">${ptxt(x.parts)}</td>${k==='bl'?`<td>${esc(x.tip)}</td>`:''}<td class="nw">${esc(x.src)}</td><td class="n">${x.time}</td><td><button class="link" data-act="ldel" data-i="${i}">删除</button></td></tr>`).join('')||`<tr><td colspan="7" class="muted" style="padding:24px;text-align:center">暂无词条</td></tr>`}</tbody></table></div>
  </div><div class="card"><h3>添加${k==='wl'?'白名单':'黑名单'}词条</h3>
- <h4 style="margin-top:4px">词 / 写法</h4><input class="inp" style="width:100%" placeholder="词或写法，如 CDFI" data-in="fw" value="${esc(f.word)}">
+ <h4 style="margin-top:4px">词 / 写法</h4><input class="inp" style="width:100%" placeholder="词或写法，如 CDFI" data-in="fw" value="${esc(f.word)}"><div id="lexHint">${lexHintHtml()}</div>
  <h4 style="margin-top:10px">绑定扣分项</h4><select class="sel" style="width:100%" data-chg="fr">${RN.map(r=>`<option ${f.rule===r?'selected':''}>${r}</option>`).join('')}</select>
  ${k==='bl'?`<h4 style="margin-top:10px">提示文案</h4><input class="inp" style="width:100%" placeholder="命中时给医生的提示" data-in="ft" value="${esc(f.tip)}">`:''}
- <h4 style="margin-top:10px">适用部位（不选 = 全部部位）</h4>${partsPick(f.parts,'fpart',true)}<div class="row" style="margin-top:12px"><button class="btn p" data-act="ladd">添加到草稿</button></div></div></div>`}
+ <h4 style="margin-top:10px">适用部位（不选 = 全部部位）</h4>${partsPick(f.parts,'fpart',true)}<div class="row" style="margin-top:12px"><button class="btn p" data-act="ladd" ${(lexConflict()||{}).hard?'disabled':''}>添加到草稿</button></div></div></div>`}
 /* 部位对应 */
 function setMap(){const q=S.mq.trim();const rows=S.maps.map((m,i)=>({m,i})).filter(r=>!q||r.m[0].includes(q));const f=S.mf;const nsel=Object.values(S.msel).filter(Boolean).length;
  const allSel=rows.length&&rows.every(r=>S.msel[r.i]),some=rows.some(r=>S.msel[r.i]);
@@ -924,7 +933,7 @@ document.addEventListener('keydown',e=>{const c=S.cap;if(!c.hkRec)return;e.preve
 document.addEventListener('input',e=>{const t=e.target,k=t.dataset.in;if(!k)return;const v=t.value,L=S.layer;
  if(k==='findings'||k==='diagnosis'){S.draft[k]=v;const b=document.querySelector('[data-act=fillAsk]');if(b)b.disabled=!editCount()}
  else if(k==='lr'||k==='lm')L.reason=v;else if(k==='lmw')L.word=v;else if(k==='law')L.word=v;else if(k==='lar')L.reason=v;
- else if(k==='fw')S.f.word=v;else if(k==='ft')S.f.tip=v;else if(k==='rn')S.rn[t.dataset.id]=v;else if(k==='mn')S.mf.name=v;else if(k==='imptext'){S.imp.text=v;S.imp.res=null}
+ else if(k==='fw'){S.f.word=v;lexHintUpdate()}else if(k==='ft')S.f.tip=v;else if(k==='rn')S.rn[t.dataset.id]=v;else if(k==='mn')S.mf.name=v;else if(k==='imptext'){S.imp.text=v;S.imp.res=null}
  else if(k==='hfq'){S.hfq=v;hfFilterOpts();return}else if(k==='rfw')S.rf.word=v;else if(k==='rft')S.rf.tip=v;else if(k==='rfy')S.rf.reason=v});
 document.addEventListener('change',e=>{const el=e.target,k=el.dataset.chg;if(!k)return;const v=el.type==='checkbox'?el.checked:el.value,c=S.cap,L=S.layer;
  if(k==='impfile'){const f=el.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{S.imp.text=String(r.result);S.imp.res=null;render()};r.readAsText(f);return}
@@ -1013,7 +1022,8 @@ document.addEventListener('click',e=>{
  case'pub':{const nc=nChanges();const d=S.draft;d.ver=S.lex.ver+1;S.lex=d;S.draft=null;S.previewed=false;S.hist.push({ver:d.ver,time:nowF(),who:'管理员',note:nc+' 项改动',snap:clone(d)});toast(`已发布词库 V${d.ver}，只影响之后的质控运行`);break}
  case'drop':S.draft=null;S.previewed=false;break;
  case'restore':{const h=S.hist.find(q=>q.ver===+v);const d=clone(h.snap);d.ver=S.lex.ver+1;S.lex=d;S.hist.push({ver:d.ver,time:nowF(),who:'管理员',note:'恢复到 V'+h.ver+' 的内容',snap:clone(d)});toast('已恢复，新词库版本 V'+d.ver);break}
- case'lex':S.lexTab=v;S.f={word:'',rule:'英文拼写错误',parts:[],tip:''};break;
+ case'lexgo':S.lexTab=v;S.lexHi=id;S.f={word:'',rule:'英文拼写错误',parts:[],tip:''};setTimeout(()=>{const r=document.querySelector('[data-lid="'+id+'"]');if(r)r.scrollIntoView({block:'center',behavior:'smooth'})},0);break;
+ case'lex':S.lexHi=null;S.lexTab=v;S.f={word:'',rule:'英文拼写错误',parts:[],tip:''};break;
  case'fpart':{if(n==='__all')S.f.parts=[];else toggle(S.f.parts,n);break}
  case'ladd':{const f=S.f,k=S.lexTab;const w=f.word.trim();if(!w){toast('请填写词或写法');return}if(k==='bl'&&!f.tip.trim()){toast('请填写提示文案');return}
   const d=mut(),other=d[k==='wl'?'bl':'wl'];const ov=q=>q.word===w&&q.rule===f.rule&&(!q.parts.length||!f.parts.length||q.parts.some(p=>f.parts.includes(p)));
