@@ -89,6 +89,7 @@ textarea{width:100%;min-height:96px;resize:vertical;line-height:1.7}
 @media(max-width:640px){.mgrid{grid-template-columns:1fr 1fr}}
 .lexhint{display:flex;flex-wrap:wrap;align-items:center;gap:2px 6px;margin-top:6px;font-size:12.5px;line-height:1.5}.lexhint.is-bad{color:var(--bad)}.lexhint.is-warn{color:var(--warn)}.lexhint .link{padding:0}
 .tbl tr.lexhi td{background:var(--warn-soft)!important;transition:background .3s}
+.drange{display:inline-flex;align-items:center;gap:6px}.drange .inp{padding:5px 8px}
 .pager{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:14px}.pager .sp{flex:1}
 .pgb{min-width:32px;height:32px;padding:0 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel);cursor:pointer;font-variant-numeric:tabular-nums}
 .pgb:hover:not(:disabled){border-color:var(--brand)}.pgb.on{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:600}.pgb:disabled{opacity:.4;cursor:default}
@@ -775,7 +776,7 @@ function renderStats(){
  const [f,t]=rangeOf(),len=f-t+1,A=aggregate(f,t,doc),hasPrev=f+len<=29,B=hasPrev?aggregate(f+len,t+len,doc):null;
  const fmtN=(v)=>String(Math.round(v)).replace(/\B(?=(\d{3})+$)/g,',');
  const flt=`<div class="row" style="margin-bottom:14px"><div class="seg">${[['7','近 7 天'],['30','近 30 天'],['365','近 1 年'],['custom','自定义']].map(o=>`<button class="${g.range===o[0]?'on':''}" data-act="strange" data-v="${o[0]}">${o[1]}</button>`).join('')}</div>
-  ${g.range==='custom'?`<input type="date" class="inp" data-chg="sfrom" value="${g.from}" min="2025-11-15" max="2026-11-14"> — <input type="date" class="inp" data-chg="sto" value="${g.to}" min="2025-11-15" max="2026-11-14">`:`<span class="muted small">${fdate(f)} ~ ${fdate(t)}</span>`}
+  <span class="drange"><input type="date" class="inp" data-chg="sfrom" value="${fdate(f)}" min="2025-11-15" max="2026-11-14" aria-label="开始日期"><span class="muted">~</span><input type="date" class="inp" data-chg="sto" value="${fdate(t)}" min="2025-11-15" max="2026-11-14" aria-label="结束日期"></span>
   ${own?'<span class="chip c-info nd">仅我的报告</span>':''}</div>`;
  const ex=(k,label)=>`<button class="link" data-act="sexp" data-v="${k}">${g.exp[k]?'收起':'展开全部'}</button>`;
  /* 1 质控数量 */
@@ -947,7 +948,7 @@ document.addEventListener('change',e=>{const el=e.target,k=el.dataset.chg;if(!k)
  case'mq':S.mq=v;break;case'msel':S.msel[el.dataset.i]=v;break;
  case'msall':{const q=S.mq.trim();S.maps.forEach((m,i)=>{if(!q||m[0].includes(q))S.msel[i]=v});break}
  case'ubsel':S.ub[el.dataset.i]=v;break;
- case'sfrom':S.st.from=v;break;case'sto':S.st.to=v;break;case'scat':S.st.cat=v;break;case'sdoc':S.st.doc=v;break}
+ case'sfrom':case'sto':{const [f0,t0]=rangeOf();if(S.st.range!=='custom'){S.st.from=fdate(f0);S.st.to=fdate(t0);S.st.range='custom'}S.st[k==='sfrom'?'from':'to']=v;if(S.st.from>S.st.to){const x=S.st.from;S.st.from=S.st.to;S.st.to=x}break}case'scat':S.st.cat=v;break;case'sdoc':S.st.doc=v;break}
  render()});
 const fixInd=()=>document.querySelectorAll('[data-ind]').forEach(e=>e.indeterminate=true);
 const _render=render;render=function(){_render();fixInd()};
@@ -1057,7 +1058,7 @@ document.addEventListener('click',e=>{
  case'clrf':delete c[c.mode][el.dataset.f];c.dirty=true;toast('已清除，请在原系统上重新'+(c.mode==='ctl'?'点击':'框选')+'该字段');break;
  case'hkrec':c.hkRec=true;break;
  case'capsave':{S.caplog.push({time:nowF(),who:'管理员',note:'采集配置保存：读取方式 '+c.methods.filter(q=>q.on).map(q=>q.n).join(' → ')+'；快捷键 '+c.hk+'；超时 '+c.timeout+' 秒'});c.dirty=false;toast('已保存采集配置，之后的采集按新配置执行');break}
- case'strange':S.st.range=v;if(v==='custom'&&!S.st.from){S.st.from='2026-11-01';S.st.to='2026-11-14'}break;
+ case'strange':{if(v==='custom'&&S.st.range!=='custom'){const [f0,t0]=rangeOf();S.st.from=fdate(f0);S.st.to=fdate(t0)}S.st.range=v;break}
  case'ssort':if(S.st.rank===v)S.st.dir*=-1;else{S.st.rank=v;S.st.dir=-1}break;case'sdim':S.st.dim=v;break;case'smode':S.st.mode=v;break;case'sdv':S.st.dv=v;break;case'sexp':S.st.exp[v]=!S.st.exp[v];break;case'rsort':if(S.st.rr===v)S.st.rd*=-1;else{S.st.rr=v;S.st.rd=-1}break;case'stfail':S.tab='list';S.sub='qc';S.filt.st=['质控失败'];break;
  case'wlist':S.widget='list';break;case'wpanel':S.widget='panel';break;case'wtick':S.widget='ticker';S.menu=false;break;case'menu':S.menu=!S.menu;break;
  case'manualQC':manualQC();return;
