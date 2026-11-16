@@ -83,6 +83,10 @@ textarea{width:100%;min-height:96px;resize:vertical;line-height:1.7}
 .hfl{max-height:228px;overflow:auto;display:flex;flex-direction:column;gap:1px}.hfe{padding:6px 8px}
 .hfo{display:flex;align-items:center;gap:8px;background:none;border:0;text-align:left;padding:6px 8px;border-radius:7px;cursor:pointer;width:100%}
 .hfo:hover{background:var(--panel2)}
+.pager{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:14px}.pager .sp{flex:1}
+.pgb{min-width:32px;height:32px;padding:0 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel);cursor:pointer;font-variant-numeric:tabular-nums}
+.pgb:hover:not(:disabled){border-color:var(--brand)}.pgb.on{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:600}.pgb:disabled{opacity:.4;cursor:default}
+.pge{padding:0 4px;color:var(--muted)}.pgs{margin-left:6px;padding:5px 8px}
 .hfsum{margin-left:auto;display:inline-flex;align-items:center;gap:2px;flex-wrap:wrap}.hfsum .link{margin-left:8px;padding:2px 0}.hfo[hidden]{display:none}
 .hfo .ck{width:14px;height:14px;border:1.5px solid var(--muted);border-radius:4px;flex:none;display:grid;place-items:center;opacity:.8}
 .hfo.on .ck{background:var(--brand);border-color:var(--brand);opacity:1}
@@ -233,6 +237,7 @@ kbd{background:var(--gray-soft);border:1px solid var(--line);border-bottom-width
  .tbl.mc tbody tr:not(.rw) td{display:block}
  .row>.inp[data-chg=fq]{width:100%!important}
  .hfsum{margin-left:0}
+ .pager .pgs{margin-left:auto}
  /* 统计 */
  .rk{grid-template-columns:20px minmax(0,1.3fr) minmax(36px,1fr) 34px 44px;gap:8px;font-size:13px}
  .rk em{font-size:12px}
@@ -324,7 +329,7 @@ function seed(){
   imp:{text:'经阴道彩超,妇科\n心脏彩超,心脏\n浅表器官联合检查,乳腺、甲状腺\n甲状腺超声,甲状腺\n小器官超声,血管X',res:null},
   cap:{win:{title:'报告书写',proc:'RIS.exe',cls:'RisMainWnd',handle:'0x1A2B',state:'已匹配'},methods:[{k:'ctl',n:'句柄读取',on:true},{k:'ocr',n:'OCR 读取',on:true}],mode:'ctl',ctl:{},ocr:{},hk:'Ctrl+Alt+Q',hkRec:false,timeout:30,dirty:false},
   caplog:[{time:'11-10 09:05',who:'管理员',note:'采集配置：新增目标窗口“影像工作站”'}],rq:'lex',recs:'pub',
-  widget:'ticker',menu:false,wx:null,wy:null,busy:false,wmsg:'',guide:true,filt:{q:'',sex:'全部',parts:[],docs:[],time:{k:'',from:'',to:''},st:[],tk:[]},afilt:{q:'',docs:[],time:{k:'',from:'',to:''},st:[],hdl:[]},hf:null,hfq:'',sel:null,
+  widget:'ticker',menu:false,wx:null,wy:null,busy:false,wmsg:'',guide:true,filt:{q:'',sex:'全部',parts:[],docs:[],time:{k:'',from:'',to:''},st:[],tk:[]},pg:{qc:{p:1,n:20,sig:''},ap:{p:1,n:20,sig:''}},afilt:{q:'',docs:[],time:{k:'',from:'',to:''},st:[],hdl:[]},hf:null,hfq:'',sel:null,
   st:{range:'30',from:'',to:'',rank:'N',dir:-1,dim:'part',exp:{},mode:'n',dv:'bar',rr:'N',rd:-1},hdl:null,layer:null,misses:[],fills:[]};
  const reps=[
  ['US-DEMO-001','0012345678','张某某','女',52,['甲状腺'],'甲状腺及颈部淋巴结超声','张医生','2026-11-14 09:30','OCR','甲状腺左叶见单发低回声结节，内部回声回声不均匀，大小3.2×2.1。双侧颈部未见明显肿大淋巴结。','甲状腺右叶结节，TI-RADS 3类，建议随访。','完成'],
@@ -512,6 +517,12 @@ function filteredTickets(){const f=S.afilt;
   if(f.st.length&&!f.st.includes(st))return false;
   if(f.hdl.length&&!f.hdl.includes(t.handler))return false;
   return true})}
+/* 分页：搜索 / 筛选 / 角色变化时回到第 1 页 */
+function pageOf(k,list,sig){const g=S.pg[k];if(g.sig!==sig){g.sig=sig;g.p=1}const pages=Math.max(1,Math.ceil(list.length/g.n));g.p=Math.min(Math.max(1,g.p),pages);
+ return{rows:list.slice((g.p-1)*g.n,g.p*g.n),pages,g,total:list.length}}
+function pagerHtml(P){const {g,pages,total}=P;if(total<=10)return'';
+ let nums=[];for(let i=1;i<=pages;i++){if(i===1||i===pages||Math.abs(i-g.p)<=1)nums.push(i);else if(nums[nums.length-1]!=='…')nums.push('…')}
+ return `<div class="pager"><span class="muted small">共 ${total} 条</span><span class="sp"></span><button class="pgb" data-act="pg" data-v="prev" ${g.p<=1?'disabled':''} aria-label="上一页">‹</button>${nums.map(x=>x==='…'?'<span class="pge">…</span>':`<button class="pgb${x===g.p?' on':''}" data-act="pg" data-v="${x}">${x}</button>`).join('')}<button class="pgb" data-act="pg" data-v="next" ${g.p>=pages?'disabled':''} aria-label="下一页">›</button><select class="sel pgs" data-chg="pgsize" aria-label="每页条数">${[10,20,50].map(n=>`<option value="${n}" ${g.n===n?'selected':''}>${n} 条/页</option>`).join('')}</select></div>`}
 /* 工具栏：搜索框 + 已筛选 N 项 */
 function hfBar(ph){const f=curF(),q=f.q.trim(),n=hfKeys().filter(hfOn).length;
  const qs=q.length>10?q.slice(0,10)+'…':q;const parts=[q?`搜索“${esc(qs)}”`:'',n?`表头筛选 ${n} 项`:''].filter(Boolean);
@@ -536,7 +547,7 @@ function placeHf(){const p=$('#hfp'),b=S.hf&&document.querySelector(`.hfb[data-v
 addEventListener('resize',placeHf);addEventListener('scroll',placeHf,true);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&S.hf){S.hf=null;render()}});
 function renderQC(){
- const f=S.filt;let rows=filteredRows();
+ const f=S.filt;const all=filteredRows(),P=pageOf('qc',all,JSON.stringify(S.filt)+S.role);let rows=P.rows;
  const guide=S.guide?`<div class="banner b-info" style="align-items:flex-start"><div><b>试用指引</b><ol class="steps" style="margin-top:2px"><li>右上角切换角色：报告医生 / 审核医生 / 管理员，看到的内容不同。</li><li>右下角悬浮窗模拟医生在工作站里的操作：点“手动质控”，结果会自动弹出。</li><li>双击任意一行进入质控详情；点正文高亮或右侧问题卡，两边联动定位。</li><li>在详情里对问题“申诉”，切到审核医生处理，回到列表看申诉列实时变化。</li><li>管理员在“设置”里配置质控词库、部位对应、采集配置。</li></ol></div><button class="x" style="position:static;margin-left:auto" data-act="guideX">×</button></div>`:'';
  return guide+`<div class="card">${hfBar('搜索检查标识、姓名、部位、医生等')}
  <div class="tw"><table class="tbl mc"><thead><tr><th>检查标识</th><th>姓名</th>${hfTh('sex')}<th>年龄</th>${hfTh('part')}${S.role==='报告医生'?'<th>报告医生</th>':hfTh('doc')}${hfTh('time')}${hfTh('st')}<th>问题数</th>${hfTh('tk')}<th>操作</th></tr></thead><tbody>
@@ -544,15 +555,15 @@ function renderQC(){
  return `<tr class="rw" data-dbl="${r.id}"><td class="m1"><b>${r.id}</b></td><td class="m2">${esc(S.role==='报告医生'||S.role==='审核医生'||S.role==='管理员'?r.name:'')}</td><td data-l="性别">${r.sex}</td><td class="n" data-l="年龄">${r.age||'—'}</td><td data-l="部位">${r.parts.join('、')}</td><td data-l="医生">${r.owner}</td><td class="n" data-l="时间">${r.time.slice(5)}</td>
  <td data-l="状态"><span class="chip ${stChip(st)}">${st}</span></td><td class="n" data-l="问题数">${run.status==='完成'?(n?`<b class="bad">${n}</b>`:'0'):'—'}</td>
  <td data-l="申诉">${t?(pn?`<span class="chip c-pur">${isRev()?'待处理 ':'申诉中 '}${pn}</span>`:'<span class="chip c-gray nd">已处理</span>'):'—'}</td>
- <td class="ma"><button class="link" data-act="open" data-id="${r.id}">查看</button>${r.owner===myName()&&S.role!=='管理员'?`<button class="link" data-act="recheckRow" data-id="${r.id}">复检</button>`:''}</td></tr>`}).join('')||`<tr><td colspan="11" class="muted" style="padding:34px;text-align:center">没有符合条件的报告</td></tr>`}</tbody></table></div>
+ <td class="ma"><button class="link" data-act="open" data-id="${r.id}">查看</button>${r.owner===myName()&&S.role!=='管理员'?`<button class="link" data-act="recheckRow" data-id="${r.id}">复检</button>`:''}</td></tr>`}).join('')||`<tr><td colspan="11" class="muted" style="padding:34px;text-align:center">没有符合条件的报告</td></tr>`}</tbody></table></div>${pagerHtml(P)}
  </div>${hfPop()}`}
 /* ---------- 申诉列表 / 处理 ---------- */
 function renderAppeal(){
- const ts=filteredTickets();
+ const tsAll=filteredTickets(),P=pageOf('ap',tsAll,JSON.stringify(S.afilt)+S.role),ts=P.rows;
  return `<div class="card">${hfBar('搜索检查标识、姓名、医生等')}
  <div class="tw"><table class="tbl mc"><thead><tr><th>检查标识</th><th>姓名</th>${hfTh('adoc')}${hfTh('atime')}<th>条目</th><th>待处理</th>${hfTh('ast')}${hfTh('ahdl')}<th>操作</th></tr></thead><tbody>
  ${ts.map(t=>{const rep=R_(t.rep),pn=pendN(t),mine=rep.owner==='赵医生'&&S.role==='审核医生';return `<tr class="rw" data-tk="${t.id}"><td class="m1"><b>${t.rep}</b></td><td class="m2">${esc(rep.name)}</td><td data-l="医生">${rep.owner}</td><td data-l="最近提交">${t.time}</td><td class="n" data-l="条目">${t.items.length}</td><td class="n" data-l="待处理">${pn||'—'}</td><td data-l="状态"><span class="chip ${pn?'c-warn':'c-ok'}">${pn?'待处理':'已处理'}</span></td><td data-l="处理人">${t.handler||'—'}</td>
- <td class="ma"><button class="link" data-act="hdl" data-id="${t.id}">${pn&&!mine?'处理申诉':'查看申诉'}</button><button class="link" data-act="open" data-id="${t.rep}">报告详情</button></td></tr>`}).join('')||`<tr><td colspan="9" class="muted" style="padding:34px;text-align:center">${myTickets().length?'没有符合条件的申诉':'暂无申诉'}</td></tr>`}</tbody></table></div></div>${hfPop()}`}
+ <td class="ma"><button class="link" data-act="hdl" data-id="${t.id}">${pn&&!mine?'处理申诉':'查看申诉'}</button><button class="link" data-act="open" data-id="${t.rep}">报告详情</button></td></tr>`}).join('')||`<tr><td colspan="9" class="muted" style="padding:34px;text-align:center">${myTickets().length?'没有符合条件的申诉':'暂无申诉'}</td></tr>`}</tbody></table></div>${pagerHtml(P)}</div>${hfPop()}`}
 function renderHandle(){
  const t=S.tickets.find(x=>x.id===S.hdl.id);const rep=R_(t.rep);const d=S.hdl.dec;
  const recuse=S.role==='审核医生'&&rep.owner==='赵医生';const canAct=!recuse&&pendN(t)>0;
@@ -913,7 +924,7 @@ document.addEventListener('change',e=>{const el=e.target,k=el.dataset.chg;if(!k)
  if(k==='impfile'){const f=el.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{S.imp.text=String(r.result);S.imp.res=null;render()};r.readAsText(f);return}
  switch(k){
  case'sim':S.sim=v;break;case'backfill':S.backfill=v;break;
- case'fq':curF().q=v;break;case'hft1':case'hft2':{const T=hfVal(S.hf);T[k==='hft1'?'from':'to']=v;T.k='custom';break}
+ case'fq':curF().q=v;break;case'pgsize':{const g=S.pg[isAp()?'ap':'qc'];g.n=+v;g.p=1;break}case'hft1':case'hft2':{const T=hfVal(S.hf);T[k==='hft1'?'from':'to']=v;T.k='custom';break}
  case'cmpA':L.a=v;break;case'cmpB':L.b=v;break;case'cmpOnly':L.only=v;break;case'hnote':S.hdl.dec[el.dataset.p].note=v;break;
  case'missBl':L.bl=v;break;case'lmr':L.rule=v;break;case'lascope':L.scope=v?el.value:L.scope;break;
  case'fr':S.f.rule=v;break;case'rfr':S.rf.rule=v;break;
@@ -932,6 +943,7 @@ document.addEventListener('click',e=>{
  const el=e.target.closest('[data-act]');if(!el)return;if(el.disabled)return;const a=el.dataset.act,v=el.dataset.v,id=el.dataset.id,pid=el.dataset.p,i=+el.dataset.i,n=el.dataset.n,c=S.cap;
  const x=['selp','open','tab','go','role','demo','reset'].includes(a)?null:ctx();
  switch(a){
+ case'pg':{const g=S.pg[isAp()?'ap':'qc'];g.p=v==='prev'?g.p-1:v==='next'?g.p+1:+v;setTimeout(()=>{const t=document.querySelector('#view .tw');if(t&&t.getBoundingClientRect().top<0)scrollTo({top:scrollY+t.getBoundingClientRect().top-90})},0);break}
  case'hf':S.hf=S.hf===v?null:v;S.hfq='';break;
  case'hfone':{const h=HF[v];h.g()[h.f]=n;break}
  case'hfpick':{const sel=hfSel(v);const j=sel.indexOf(n);if(j<0)sel.push(n);else sel.splice(j,1);hfSet(v,sel);break}
