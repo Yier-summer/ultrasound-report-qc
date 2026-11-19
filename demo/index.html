@@ -74,7 +74,7 @@ textarea{width:100%;min-height:96px;resize:vertical;line-height:1.7}
 .tbl th{background:var(--panel2);color:var(--muted);font-weight:600;text-align:left;padding:10px 14px;white-space:nowrap;position:sticky;top:0;border-bottom:1px solid var(--line);font-size:12.5px}
 .tbl td{padding:10px 14px;border-bottom:1px solid var(--line);white-space:nowrap;vertical-align:middle}
 .tbl tr:last-child td{border-bottom:0}
-.tbl.wrap td{white-space:normal}.tbl.wrap td.n,.tbl.wrap td.nw,.tbl.wrap td:first-child,.tbl.wrap td:last-child{white-space:nowrap}
+.tbl.wrap td{white-space:normal}.tbl.wrap td,.tbl.wrap th{padding-left:10px;padding-right:10px}.tbl.wrap td:nth-child(2){white-space:nowrap}.tbl.wrap td:nth-child(3){word-break:keep-all}.lexgrid{grid-template-columns:minmax(0,1.65fr) minmax(300px,1fr)}@media(max-width:980px){.lexgrid{grid-template-columns:minmax(0,1fr)}}.tbl.wrap td.n,.tbl.wrap td.nw,.tbl.wrap td:first-child,.tbl.wrap td:last-child{white-space:nowrap}
 .hfb{display:inline-flex;align-items:center;gap:6px;margin:-4px 0 -4px -9px;padding:3px 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--fg);font-weight:600;font-size:12.5px;cursor:pointer;white-space:nowrap;transition:.12s}
 .hfb svg{color:var(--muted)}.hfb:hover,.hfb.open{border-color:var(--brand)}
 .hfb.on{border-color:var(--brand);background:var(--brand-soft);color:var(--brand)}.hfb.on svg{color:var(--brand)}
@@ -329,9 +329,19 @@ const latestVer=rec=>rec.versions[rec.versions.length-1];
 const latestRun=ver=>ver.runs[ver.runs.length-1];
 function findProb(pid){const [rid,ri,v,run]=pid.split('.');const rep=R_(rid);if(!rep)return null;const ver=rep.records[+ri].versions.find(x=>x.v===v);const r=ver&&ver.runs.find(x=>x.id===run);return r&&r.problems.find(p=>p.id===pid)}
 function seed(){
- const live={ver:12,wl:[{id:'W1',word:'CDFI',rule:'英文拼写错误',parts:[],src:'管理员',time:'11-12 18:20'}],bl:[{id:'B1',word:'可能为',rule:'诊断内容缺失或错误',parts:['甲状腺'],tip:'不确定表述，请核对',src:'管理员',time:'11-12 18:20'}]};
+ const v11={ver:11,
+  wl:[{id:'W2',word:'PSV',rule:'英文拼写错误',parts:[],src:'管理员',time:'11-05 10:20'},
+      {id:'W3',word:'RI',rule:'英文拼写错误',parts:[],src:'管理员',time:'11-05 10:20'},
+      {id:'W4',word:'EF',rule:'英文拼写错误',parts:['心脏'],src:'陈医生（申请）',time:'11-08 14:05'},
+      {id:'W5',word:'IVS',rule:'英文拼写错误',parts:['心脏'],src:'陈医生（申请）',time:'11-08 14:05'}],
+  bl:[{id:'B2',word:'TIRADS',rule:'英文拼写错误',parts:[],tip:'应为“TI-RADS”',src:'管理员',time:'11-05 10:20'},
+      {id:'B3',word:'BIRADS',rule:'英文拼写错误',parts:[],tip:'应为“BI-RADS”',src:'管理员',time:'11-05 10:20'},
+      {id:'B4',word:'低回生',rule:'错别字',parts:[],tip:'应为“低回声”',src:'张医生（申请）',time:'11-07 09:40'},
+      {id:'B5',word:'钙花',rule:'错别字',parts:[],tip:'应为“钙化”',src:'管理员',time:'11-07 09:40'},
+      {id:'B6',word:'TI-RADS',rule:'诊断内容缺失或错误',parts:['乳腺'],tip:'乳腺应使用 BI-RADS 分类',src:'管理员',time:'11-10 16:40'}]};
+ const live={ver:12,wl:[{id:'W1',word:'CDFI',rule:'英文拼写错误',parts:[],src:'管理员',time:'11-12 18:20'},...v11.wl],bl:[{id:'B1',word:'可能为',rule:'诊断内容缺失或错误',parts:['甲状腺'],tip:'不确定表述，请核对',src:'管理员',time:'11-12 18:20'},...v11.bl]};
  S={role:'报告医生',tab:'list',aset:null,cur:'US-DEMO-001',ri:0,vi:null,runi:null,editing:false,sim:'',backfill:'ok',demoOpen:false,
-  lex:live,draft:null,previewed:false,hist:[{ver:11,time:'11-10 16:40',who:'管理员',note:'初始词库',snap:{ver:11,wl:[],bl:[]}},{ver:12,time:'11-12 18:20',who:'管理员',note:'新增白名单 CDFI、黑名单“可能为”',snap:clone(live)}],
+  lex:live,draft:null,previewed:false,hist:[{ver:11,time:'11-10 16:40',who:'管理员',note:'初始词库：白名单 PSV、RI、EF、IVS；黑名单 TIRADS、BIRADS、低回生、钙花、TI-RADS（乳腺）',snap:clone(v11)},{ver:12,time:'11-12 18:20',who:'管理员',note:'新增白名单 CDFI、黑名单“可能为”',snap:clone(live)}],
   lexTab:'wl',f:{word:'',rule:'英文拼写错误',parts:[],tip:''},rn:{},
   reqs:[{id:'A1',doctor:'张医生',type:'白名单',word:'PCS',rule:'英文拼写错误',parts:[],reason:'PCS 是常用缩写，不是拼写错误',time:'今天 10:12',st:'待审核'},{id:'A2',doctor:'王医生',type:'黑名单',word:'可能是',rule:'诊断内容缺失或错误',parts:['乳腺'],tip:'不确定表述，请核对',reason:'本院乳腺报告不允许写“可能是”',time:'今天 09:40',st:'待审核'},{id:'A3',doctor:'陈医生',type:'白名单',word:'CDFI',rule:'英文拼写错误',parts:[],reason:'彩色多普勒常用缩写',time:'11-12 15:00',st:'已通过',note:'已加入词库 V12'}],
   rf:{type:'白名单',word:'',rule:'英文拼写错误',parts:[],tip:'',reason:''},
@@ -872,7 +882,7 @@ function setLex(){const d=D(),k=S.lexTab;const pend=S.reqs.filter(r=>r.st==='待
  const tabs=`<div class="row" style="margin-bottom:10px"><h3 style="margin:0">质控词库</h3><span class="chip c-info nd">当前生效 V${S.lex.ver}</span><div class="seg" style="margin-left:auto"><button class="${k==='wl'?'on':''}" data-act="lex" data-v="wl">白名单 ${d.wl.length}</button><button class="${k==='bl'?'on':''}" data-act="lex" data-v="bl">黑名单 ${d.bl.length}</button><button class="${k==='rq'?'on':''}" data-act="lex" data-v="rq">医生申请${pend?` · ${pend}`:''}</button></div></div>`;
  if(k==='rq')return `<div class="card">${tabs}${S.reqs.map(r=>`<div class="box" style="margin-bottom:10px"><div class="row"><span class="chip ${r.st==='待审核'?'c-warn':r.st==='已通过'?'c-ok':'c-bad'}">${r.st}</span><b>${r.type}：${esc(r.word)}</b><span class="muted small">绑定 ${r.rule} · ${r.parts.length?r.parts.join('、'):'全部部位'} · ${r.doctor} · ${r.time}</span></div>${r.tip?`<div class="small">提示文案：${esc(r.tip)}</div>`:''}<div class="small" style="margin:4px 0">理由：${esc(r.reason)}</div>${r.st==='待审核'?`<div class="row"><button class="btn g sm" data-act="rpass" data-id="${r.id}">通过并加入草稿</button><input class="inp" style="width:220px" placeholder="驳回须填写说明" data-in="rn" data-id="${r.id}" value="${esc(S.rn[r.id]||'')}"><button class="btn d sm" data-act="rrej" data-id="${r.id}">驳回</button></div>`:`<div class="small muted">${esc(r.note||'')}</div>`}</div>`).join('')}</div>`;
  const list=d[k],f=S.f,ptxt=p=>p.length?p.join('、'):'全部部位';
- return `<div class="grid2"><div class="card">${tabs}<p class="muted small">${k==='wl'?'白名单：命中的内容，不再被所绑定的扣分项标记。':'黑名单：命中的内容一定提示，算作所绑定扣分项的问题。'}精确匹配，不开放通配符。词条先进草稿，预览后发布。</p>
+ return `<div class="grid2 lexgrid"><div class="card">${tabs}<p class="muted small">${k==='wl'?'白名单：命中的内容，不再被所绑定的扣分项标记。':'黑名单：命中的内容一定提示，算作所绑定扣分项的问题。'}精确匹配，不开放通配符。词条先进草稿，预览后发布。</p>
  <div class="tw"><table class="tbl wrap"><thead><tr><th>词 / 写法</th><th>绑定扣分项</th><th>适用部位</th>${k==='bl'?'<th>提示文案</th>':''}<th>来源</th><th>添加时间</th><th></th></tr></thead><tbody>${list.map((x,i)=>`<tr data-lid="${x.id}" class="${S.lexHi===x.id?'lexhi':''}"><td><b>${esc(x.word)}</b></td><td>${x.rule}</td><td style="white-space:normal;max-width:220px">${ptxt(x.parts)}</td>${k==='bl'?`<td>${esc(x.tip)}</td>`:''}<td class="nw">${esc(x.src)}</td><td class="n">${x.time}</td><td><button class="link" data-act="ldel" data-i="${i}">删除</button></td></tr>`).join('')||`<tr><td colspan="7" class="muted" style="padding:24px;text-align:center">暂无词条</td></tr>`}</tbody></table></div>
  </div><div class="card"><h3>添加${k==='wl'?'白名单':'黑名单'}词条</h3>
  <h4 style="margin-top:4px">词 / 写法</h4><input class="inp" style="width:100%" placeholder="词或写法，如 CDFI" data-in="fw" value="${esc(f.word)}"><div id="lexHint">${lexHintHtml()}</div>
